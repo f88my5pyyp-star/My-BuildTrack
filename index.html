@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My BuildTrack</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fdf8f6',
+                            100: '#fbe8e6',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tesseract.js for OCR Receipt Scanning -->
+    <script src="https://unpkg.com/tesseract.js@v4.0.2/dist/tesseract.min.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PWA Manifest & Meta -->
+    <meta name="theme-color" content="#ea580c">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 flex flex-col antialiased select-none">
+
+    <!-- Launch / Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 z-50 bg-gradient-to-br from-brand-600 to-brand-800 flex flex-col items-center justify-center text-white transition-opacity duration-500">
+        <div class="flex flex-col items-center animate-bounce">
+            <div class="w-32 h-32 bg-white rounded-2xl shadow-2xl flex items-center justify-center mb-4 p-4">
+                <i class="fa-solid fa-helmet-safety text-6xl text-brand-600"></i>
+            </div>
+            <h1 class="text-3xl font-bold tracking-wider mt-2">MY BUILDTRACK</h1>
+            <p class="text-brand-100 text-sm mt-1">DIY Construction & Expense Manager</p>
+        </div>
+        <div class="absolute bottom-10 flex flex-col items-center">
+            <div class="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-xs text-brand-100 mt-2">Loading workspace...</span>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white shadow-sm sticky top-0 z-30 flex-shrink-0">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('home')">
+                <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-helmet-safety text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900">My BuildTrack</h1>
+                    <p class="text-xs text-slate-500" id="header-subtitle">Active Project: None</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="checkForAppUpdates()" class="p-2 text-slate-600 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition" title="Check for Updates">
+                    <i class="fa-solid fa-rotate text-lg" id="update-icon"></i>
+                </button>
+                <button onclick="openSettingsModal()" class="p-2 text-slate-600 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition" title="Settings">
+                    <i class="fa-solid fa-gear text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto pb-24 max-w-7xl w-full mx-auto px-4 pt-4">
+        
+        <!-- HOME / DASHBOARD TAB -->
+        <section id="tab-home" class="tab-content space-y-6">
+            <!-- Welcome Banner / Active Project Summary -->
+            <div class="bg-gradient-to-r from-brand-600 to-brand-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl">
+                    <i class="fa-solid fa-helmet-safety"></i>
+                </div>
+                <div class="relative z-10">
+                    <span class="bg-white/20 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Dashboard Overview</span>
+                    <h2 class="text-2xl font-bold mt-2" id="home-project-title">No Project Selected</h2>
+                    <p class="text-brand-100 text-sm mt-1" id="home-project-desc">Select or create a project to start tracking your construction journey.</p>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/20">
+                        <div>
+                            <p class="text-xs text-brand-100 uppercase tracking-wider">Total Budget</p>
+                            <p class="text-xl font-bold mt-0.5" id="home-stat-budget">$0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-brand-100 uppercase tracking-wider">Total Spent</p>
+                            <p class="text-xl font-bold mt-0.5" id="home-stat-spent">$0.00</p>
+                        </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <p class="text-xs text-brand-100 uppercase tracking-wider">Remaining</p>
+                            <p class="text-xl font-bold mt-0.5" id="home-stat-remaining">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <button onclick="switchTab('projects')" class="bg-white p-4 rounded-xl shadow-sm hover:shadow-md border border-slate-100 flex flex-col items-center text-center transition group">
+                    <div class="w-12 h-12 bg-orange-50 text-brand-600 rounded-xl flex items-center justify-center text-xl mb-3 group-hover:bg-brand-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <span class="font-semibold text-sm text-slate-800">Projects</span>
+                    <span class="text-xs text-slate-500 mt-0.5">Manage sites</span>
+                </button>
+                <button onclick="switchTab('expenses')" class="bg-white p-4 rounded-xl shadow-sm hover:shadow-md border border-slate-100 flex flex-col items-center text-center transition group">
+                    <div class="w-12 h-12 bg-orange-50 text-brand-600 rounded-xl flex items-center justify-center text-xl mb-3 group-hover:bg-brand-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <span class="font-semibold text-sm text-slate-800">Expenses</span>
+                    <span class="text-xs text-slate-500 mt-0.5">Log costs & units</span>
+                </button>
+                <button onclick="switchTab('scanner')" class="bg-white p-4 rounded-xl shadow-sm hover:shadow-md border border-slate-100 flex flex-col items-center text-center transition group">
+                    <div class="w-12 h-12 bg-orange-50 text-brand-600 rounded-xl flex items-center justify-center text-xl mb-3 group-hover:bg-brand-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                    <span class="font-semibold text-sm text-slate-800">Scan Receipt</span>
+                    <span class="text-xs text-slate-500 mt-0.5">OCR Extraction</span>
+                </button>
+                <button onclick="switchTab('analytics')" class="bg-white p-4 rounded-xl shadow-sm hover:shadow-md border border-slate-100 flex flex-col items-center text-center transition group">
+                    <div class="w-12 h-12 bg-orange-50 text-brand-600 rounded-xl flex items-center justify-center text-xl mb-3 group-hover:bg-brand-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <span class="font-semibold text-sm text-slate-800">Analytics</span>
+                    <span class="text-xs text-slate-500 mt-0.5">Charts & insights</span>
+                </button>
+            </div>
+
+            <!-- Recent Expenses List Preview -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 text-lg">Recent Expenses</h3>
+                    <button onclick="switchTab('expenses')" class="text-sm font-semibold text-brand-600 hover:text-brand-700">View All</button>
+                </div>
+                <div id="home-recent-expenses" class="divide-y divide-slate-100">
+                    <p class="text-sm text-slate-500 py-4 text-center">No expenses recorded yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROJECTS TAB -->
+        <section id="tab-projects" class="tab-content hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Projects</h2>
+                    <p class="text-sm text-slate-500">Manage your construction sites and budgets</p>
+                </div>
+                <button onclick="openProjectModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-md flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>New Project</span>
+                </button>
+            </div>
+
+            <!-- Project Cards Grid -->
+            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Dynamic Projects populated here -->
+            </div>
+        </section>
+
+        <!-- EXPENSES TAB -->
+        <section id="tab-expenses" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Expense Logs</h2>
+                    <p class="text-sm text-slate-500">Track itemized costs, materials, and labor</p>
+                </div>
+                <button onclick="openExpenseModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-md flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add Expense</span>
+                </button>
+            </div>
+
+            <!-- Filter & Search Bar -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-3">
+                <div class="flex-1 relative">
+                    <i class="fa-solid fa-search absolute left-3.5 top-3.5 text-slate-400"></i>
+                    <input type="text" id="expense-search" oninput="filterExpenses()" placeholder="Search expenses by title or category..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                </div>
+                <select id="expense-category-filter" onchange="filterExpenses()" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-brand-500">
+                    <option value="">All Categories</option>
+                    <option value="Materials">Materials</option>
+                    <option value="Labor">Labor</option>
+                    <option value="Permits">Permits & Fees</option>
+                    <option value="Tools">Tools & Equipment</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <!-- Expenses List Table/Card View -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3 px-4">Item / Description</th>
+                                <th class="py-3 px-4">Category</th>
+                                <th class="py-3 px-4">Quantity / Unit</th>
+                                <th class="py-3 px-4">Cost</th>
+                                <th class="py-3 px-4">Date</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-table-body" class="divide-y divide-slate-100 text-sm">
+                            <tr>
+                                <td colspan="6" class="py-6 text-center text-slate-400">No expenses logged for this project.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCANNER TAB (OCR Receipt Scanner) -->
+        <section id="tab-scanner" class="tab-content hidden space-y-6">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">Receipt Scanner</h2>
+                <p class="text-sm text-slate-500">Upload or snap a photo of a receipt to automatically extract totals via OCR</p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
+                <!-- Upload Box -->
+                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-brand-500 transition cursor-pointer relative" onclick="document.getElementById('receipt-file-input').click()">
+                    <input type="file" id="receipt-file-input" accept="image/*" class="hidden" onchange="handleReceiptImage(event)">
+                    <div id="scanner-dropzone-content" class="flex flex-col items-center">
+                        <div class="w-16 h-16 bg-orange-50 text-brand-600 rounded-full flex items-center justify-center text-2xl mb-4">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-lg">Click to capture or upload receipt</h3>
+                        <p class="text-slate-500 text-sm mt-1">Supports JPG, PNG images</p>
+                    </div>
+                </div>
+
+                <!-- Preview & OCR Status -->
+                <div id="scanner-process-area" class="hidden space-y-4">
+                    <div class="flex items-center space-x-4 bg-slate-50 p-4 rounded-xl">
+                        <img id="receipt-preview-img" src="" alt="Receipt Preview" class="w-24 h-24 object-cover rounded-lg border border-slate-200">
+                        <div class="flex-1">
+                            <h4 id="scanner-status-text" class="font-bold text-slate-800">Ready to scan</h4>
+                            <p id="scanner-progress-sub" class="text-xs text-slate-500 mt-0.5">Click process below to initiate optical character recognition.</p>
+                            <div id="scanner-loader" class="hidden w-full bg-slate-200 rounded-full h-2 mt-3 overflow-hidden">
+                                <div id="scanner-progress-bar" class="bg-brand-600 h-full w-0 transition-all duration-300"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button onclick="resetScanner()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition">Clear</button>
+                        <button id="btn-run-ocr" onclick="runTesseractOCR()" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm shadow-md transition flex items-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Extract Data</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OCR Extraction Result Output Form -->
+                <div id="ocr-result-form" class="hidden space-y-4 pt-4 border-t border-slate-100 animate-fade-in">
+                    <h3 class="font-bold text-slate-800 text-lg">Extracted Receipt Information</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Extracted Total Cost ($)</label>
+                            <input type="number" step="0.01" id="ocr-extracted-cost" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Expense Title / Vendor</label>
+                            <input type="text" id="ocr-extracted-title" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Full OCR Raw Text</label>
+                        <textarea id="ocr-raw-text" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-600 focus:outline-none focus:border-brand-500" readonly></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="saveOcrAsExpense()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm shadow-md transition flex items-center space-x-2">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Save as Expense Item</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALYTICS TAB -->
+        <section id="tab-analytics" class="tab-content hidden space-y-6">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">Analytics & Reports</h2>
+                <p class="text-sm text-slate-500">Visual breakdown of your project expenditure</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Category Breakdown Chart -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center">
+                    <h3 class="font-bold text-slate-800 text-lg w-full mb-4">Expenses by Category</h3>
+                    <div class="w-full h-64 relative flex items-center justify-center">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Budget Utilization Bar -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
+                    <h3 class="font-bold text-slate-800 text-lg">Budget Health</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-medium text-slate-600">Total Allocated Budget</span>
+                                <span class="font-bold text-slate-900" id="analytics-budget">$0.00</span>
+                            </div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-medium text-slate-600">Total Spent</span>
+                                <span class="font-bold text-brand-600" id="analytics-spent">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+                            <div id="analytics-progress-bar" class="bg-brand-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <p id="analytics-status-msg" class="text-xs text-slate-500">All calculations update automatically as new expenses are entered.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bg-white border-t border-slate-200 fixed bottom-0 left-0 right-0 z-30 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-around">
+            <button onclick="switchTab('home')" class="nav-btn flex flex-col items-center justify-center flex-1 h-full text-brand-600 transition" data-tab="home">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="text-xs mt-1 font-semibold">Home</span>
+            </button>
+            <button onclick="switchTab('projects')" class="nav-btn flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-slate-600 transition" data-tab="projects">
+                <i class="fa-solid fa-folder-open text-lg"></i>
+                <span class="text-xs mt-1 font-medium">Projects</span>
+            </button>
+            <button onclick="switchTab('expenses')" class="nav-btn flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-slate-600 transition" data-tab="expenses">
+                <i class="fa-solid fa-receipt text-lg"></i>
+                <span class="text-xs mt-1 font-medium">Expenses</span>
+            </button>
+            <button onclick="switchTab('scanner')" class="nav-btn flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-slate-600 transition" data-tab="scanner">
+                <i class="fa-solid fa-camera text-lg"></i>
+                <span class="text-xs mt-1 font-medium">Scanner</span>
+            </button>
+            <button onclick="switchTab('analytics')" class="nav-btn flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-slate-600 transition" data-tab="analytics">
+                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <span class="text-xs mt-1 font-medium">Analytics</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Project Modal -->
+    <div id="project-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="project-modal-title" class="font-bold text-slate-900 text-lg">New Project</h3>
+                <button onclick="closeProjectModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="project-form" onsubmit="handleProjectSubmit(event)" class="space-y-4">
+                <input type="hidden" id="project-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Project Name</label>
+                    <input type="text" id="proj-name" required placeholder="e.g., Backyard Shed Extension" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Description</label>
+                    <textarea id="proj-desc" rows="2" placeholder="Brief outline of the build..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Total Budget ($)</label>
+                    <input type="number" step="0.01" id="proj-budget" required placeholder="5000.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeProjectModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm shadow-md transition">Save Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div id="expense-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="expense-modal-title" class="font-bold text-slate-900 text-lg">Add Expense</h3>
+                <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="expense-form" onsubmit="handleExpenseSubmit(event)" class="space-y-4">
+                <input type="hidden" id="expense-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Expense Title / Item</label>
+                    <input type="text" id="exp-title" required placeholder="e.g., 2x4 Lumber Boards" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Cost ($)</label>
+                        <input type="number" step="0.01" id="exp-cost" required placeholder="125.50" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Category</label>
+                        <select id="exp-category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-brand-500">
+                            <option value="Materials">Materials</option>
+                            <option value="Labor">Labor</option>
+                            <option value="Permits">Permits & Fees</option>
+                            <option value="Tools">Tools & Equipment</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Quantity</label>
+                        <input type="number" step="any" id="exp-qty" value="1" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Unit of Measure</label>
+                        <select id="exp-uom" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-brand-500">
+                            <option value="pcs">Pieces (pcs)</option>
+                            <option value="sqft">Square Feet (sqft)</option>
+                            <option value="hrs">Hours (hrs)</option>
+                            <option value="bags">Bags</option>
+                            <option value="sheets">Sheets</option>
+                            <option value="ls">Lump Sum (ls)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Date</label>
+                    <input type="date" id="exp-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm shadow-md transition">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-fade-in space-y-4">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-slate-900 text-lg">App Settings</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div class="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+                    <div>
+                        <h4 class="font-semibold text-sm text-slate-800">Application Version</h4>
+                        <p class="text-xs text-slate-500">My BuildTrack PWA v1.4.0</p>
+                    </div>
+                    <button onclick="checkForAppUpdates()" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold transition">Check Update</button>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+                    <div>
+                        <h4 class="font-semibold text-sm text-slate-800">Local Data Storage</h4>
+                        <p class="text-xs text-slate-500">Reset or export local records</p>
+                    </div>
+                    <button onclick="exportDataJSON()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition">Export JSON</button>
+                </div>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="closeSettingsModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // State Management
+        let appData = {
+            projects: [],
+            expenses: [],
+            activeProjectId: null
+        };
+
+        let categoryChartInstance = null;
+
+        // Initialization on DOM Content Loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            
+            // Set default date for expense input
+            document.getElementById('exp-date').valueAsDate = new Date();
+
+            // Hide splash screen smoothly after load
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                if (splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.remove(), 500);
+                }
+            }, 800);
+
+            // Register Service Worker for PWA updates
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    window.appServiceWorkerReg = reg;
+                }).catch(err => console.log('SW registration failed: ', err));
+            }
+
+            // Initial render
+            renderAll();
+            switchTab('home');
+        });
+
+        // Local Storage persistence
+        function saveToLocalStorage() {
+            localStorage.setItem('my_buildtrack_data', JSON.stringify(appData));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('my_buildtrack_data');
+            if (saved) {
+                try {
+                    appData = JSON.parse(saved);
+                } catch(e) {
+                    console.error('Error parsing stored data', e);
+                }
+            }
+            if (!appData.projects) appData.projects = [];
+            if (!appData.expenses) appData.expenses = [];
+            
+            // If no active project but projects exist, set first as active
+            if (!appData.activeProjectId && appData.projects.length > 0) {
+                appData.activeProjectId = appData.projects[0].id;
+            }
+        }
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                targetTab.classList.add('animate-fade-in');
+            }
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    btn.classList.remove('text-slate-400', 'font-medium');
+                    btn.classList.add('text-brand-600', 'font-semibold');
+                } else {
+                    btn.classList.remove('text-brand-600', 'font-semibold');
+                    btn.classList.add('text-slate-400', 'font-medium');
+                }
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (tabId === 'analytics') {
+                renderCharts();
+            }
+        }
+
+        // Render All Data Views
+        function renderAll() {
+            renderProjectsList();
+            renderHomeDashboard();
+            renderExpensesTable();
+            updateHeaderSubtitle();
+        }
+
+        function updateHeaderSubtitle() {
+            const subtitle = document.getElementById('header-subtitle');
+            const activeProj = appData.projects.find(p => p.id === appData.activeProjectId);
+            if (activeProj) {
+                subtitle.textContent = `Active: ${activeProj.name}`;
+            } else {
+                subtitle.textContent = appData.projects.length > 0 ? 'Select a Project' : 'No Projects Found';
+            }
+        }
+
+        // Home Dashboard Rendering
+        function renderHomeDashboard() {
+            const activeProj = appData.projects.find(p => p.id === appData.activeProjectId);
+            const titleEl = document.getElementById('home-project-title');
+            const descEl = document.getElementById('home-project-desc');
+            const budgetEl = document.getElementById('home-stat-budget');
+            const spentEl = document.getElementById('home-stat-spent');
+            const remainingEl = document.getElementById('home-stat-remaining');
+            const recentContainer = document.getElementById('home-recent-expenses');
+
+            if (!activeProj) {
+                titleEl.textContent = 'No Active Project';
+                descEl.textContent = 'Create your first construction project to begin tracking budgets and expenses.';
+                budgetEl.textContent = '$0.00';
+                spentEl.textContent = '$0.00';
+                remainingEl.textContent = '$0.00';
+                recentContainer.innerHTML = `<p class="text-sm text-slate-500 py-4 text-center">No project selected.</p>`;
+                return;
+            }
+
+            titleEl.textContent = activeProj.name;
+            descEl.textContent = activeProj.description || 'Tracking construction progress and itemized expenditures.';
+            
+            const projExpenses = appData.expenses.filter(e => e.projectId === activeProj.id);
+            const totalSpent = projExpenses.reduce((sum, e) => sum + Number(e.cost || 0), 0);
+            const remaining = Number(activeProj.budget) - totalSpent;
+
+            budgetEl.textContent = `$${Number(activeProj.budget).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            spentEl.textContent = `$${totalSpent.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            remainingEl.textContent = `$${remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            if (remaining < 0) {
+                remainingEl.className = 'text-xl font-bold mt-0.5 text-red-200';
+            } else {
+                remainingEl.className = 'text-xl font-bold mt-0.5';
+            }
+
+            // Recent expenses
+            if (projExpenses.length === 0) {
+                recentContainer.innerHTML = `<p class="text-sm text-slate-500 py-4 text-center">No expenses recorded yet.</p>`;
+            } else {
+                const sorted = [...projExpenses].reverse().slice(0, 5);
+                recentContainer.innerHTML = sorted.map(e => `
+                    <div class="py-3 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-semibold text-sm text-slate-800">${escapeHtml(e.title)}</h4>
+                            <p class="text-xs text-slate-500">${e.category} • ${e.date}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-sm text-slate-900">$${Number(e.cost).toFixed(2)}</span>
+                            <p class="text-xs text-slate-400">${e.qty || 1} ${e.uom || 'pcs'}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Projects Management
+        function renderProjectsList() {
+            const grid = document.getElementById('projects-grid');
+            if (appData.projects.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <div class="w-16 h-16 bg-orange-50 text-brand-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-lg">No Projects Created</h3>
+                        <p class="text-slate-500 text-sm mt-1 mb-4">Click below to start your first project build.</p>
+                        <button onclick="openProjectModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm transition">Create Project</button>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = appData.projects.map(p => {
+                const projExpenses = appData.expenses.filter(e => e.projectId === p.id);
+                const spent = projExpenses.reduce((sum, e) => sum + Number(e.cost || 0), 0);
+                const pct = p.budget > 0 ? Math.min(100, Math.round((spent / p.budget) * 100)) : 0;
+                const isActive = p.id === appData.activeProjectId;
+
+                return `
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border ${isActive ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-100'} flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    ${isActive ? '<span class="bg-brand-100 text-brand-700 text-xs font-bold px-2.5 py-0.5 rounded-full mb-2 inline-block">Active Project</span>' : ''}
+                                    <h3 class="font-bold text-slate-900 text-lg">${escapeHtml(p.name)}</h3>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button onclick="editProject('${p.id}')" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg"><i class="fa-solid fa-pen text-sm"></i></button>
+                                    <button onclick="deleteProject('${p.id}')" class="p-2 text-slate-400 hover:text-red-600 rounded-lg"><i class="fa-solid fa-trash text-sm"></i></button>
+                                </div>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-1">${escapeHtml(p.description || 'No description provided.')}</p>
+                        </div>
+                        
+                        <div class="space-y-2 pt-4 border-t border-slate-100">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">Spent: <strong class="text-slate-800">$${spent.toFixed(2)}</strong></span>
+                                <span class="text-slate-500">Budget: <strong class="text-slate-800">$${Number(p.budget).toFixed(2)}</strong></span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                <div class="bg-brand-600 h-full rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex justify-between items-center">
+                            <span class="text-xs text-slate-400">${projExpenses.length} expense item(s)</span>
+                            ${!isActive ? `<button onclick="setActiveProject('${p.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-brand-600 hover:text-white text-slate-700 rounded-lg text-xs font-semibold transition">Set Active</button>` : '<span class="text-xs font-bold text-brand-600">Current Workspace</span>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openProjectModal(projectId = null) {
+            document.getElementById('project-modal').classList.remove('hidden');
+            if (projectId) {
+                const p = appData.projects.find(item => item.id === projectId);
+                if (p) {
+                    document.getElementById('project-modal-title').textContent = 'Edit Project';
+                    document.getElementById('project-id').value = p.id;
+                    document.getElementById('proj-name').value = p.name;
+                    document.getElementById('proj-desc').value = p.description || '';
+                    document.getElementById('proj-budget').value = p.budget;
+                }
+            } else {
+                document.getElementById('project-modal-title').textContent = 'New Project';
+                document.getElementById('project-form').reset();
+                document.getElementById('project-id').value = '';
+            }
+        }
+
+        function closeProjectModal() {
+            document.getElementById('project-modal').classList.add('hidden');
+        }
+
+        function handleProjectSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('project-id').value;
+            const name = document.getElementById('proj-name').value;
+            const description = document.getElementById('proj-desc').value;
+            const budget = parseFloat(document.getElementById('proj-budget').value);
+
+            if (id) {
+                const p = appData.projects.find(item => item.id === id);
+                if (p) {
+                    p.name = name;
+                    p.description = description;
+                    p.budget = budget;
+                }
+            } else {
+                const newProj = {
+                    id: 'proj_' + Date.now(),
+                    name,
+                    description,
+                    budget
+                };
+                appData.projects.push(newProj);
+                if (!appData.activeProjectId) {
+                    appData.activeProjectId = newProj.id;
+                }
+            }
+
+            saveToLocalStorage();
+            closeProjectModal();
+            renderAll();
+        }
+
+        function setActiveProject(id) {
+            appData.activeProjectId = id;
+            saveToLocalStorage();
+            renderAll();
+            switchTab('home');
+        }
+
+        function editProject(id) {
+            openProjectModal(id);
+        }
+
+        function deleteProject(id) {
+            if (confirm('Are you sure you want to delete this project and all associated expenses?')) {
+                appData.projects = appData.projects.filter(p => p.id !== id);
+                appData.expenses = appData.expenses.filter(e => e.projectId !== id);
+                if (appData.activeProjectId === id) {
+                    appData.activeProjectId = appData.projects.length > 0 ? appData.projects[0].id : null;
+                }
+                saveToLocalStorage();
+                renderAll();
+            }
+        }
+
+        // Expenses Management
+        function renderExpensesTable() {
+            const tbody = document.getElementById('expenses-table-body');
+            const activeProjId = appData.activeProjectId;
+            
+            if (!activeProjId) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">Please select an active project first.</td></tr>`;
+                return;
+            }
+
+            let projExpenses = appData.expenses.filter(e => e.projectId === activeProjId);
+            
+            // Search filter
+            const searchTerm = document.getElementById('expense-search').value.toLowerCase();
+            const catFilter = document.getElementById('expense-category-filter').value;
+
+            if (searchTerm) {
+                projExpenses = projExpenses.filter(e => e.title.toLowerCase().includes(searchTerm) || e.category.toLowerCase().includes(searchTerm));
+            }
+            if (catFilter) {
+                projExpenses = projExpenses.filter(e => e.category === catFilter);
+            }
+
+            if (projExpenses.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">No matching expenses found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = projExpenses.map(e => `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="py-3 px-4 font-medium text-slate-800">${escapeHtml(e.title)}</td>
+                    <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-semibold">${e.category}</span></td>
+                    <td class="py-3 px-4 text-slate-600">${e.qty || 1} ${e.uom || 'pcs'}</td>
+                    <td class="py-3 px-4 font-bold text-slate-900">$${Number(e.cost).toFixed(2)}</td>
+                    <td class="py-3 px-4 text-slate-500 text-xs">${e.date}</td>
+                    <td class="py-3 px-4 text-right space-x-1">
+                        <button onclick="editExpense('${e.id}')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="deleteExpense('${e.id}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterExpenses() {
+            renderExpensesTable();
+        }
+
+        function openExpenseModal(expenseId = null) {
+            if (!appData.activeProjectId) {
+                alert('Please select or create a project before adding expenses.');
+                switchTab('projects');
+                return;
+            }
+
+            document.getElementById('expense-modal').classList.remove('hidden');
+            if (expenseId) {
+                const exp = appData.expenses.find(item => item.id === expenseId);
+                if (exp) {
+                    document.getElementById('expense-modal-title').textContent = 'Edit Expense';
+                    document.getElementById('expense-id').value = exp.id;
+                    document.getElementById('exp-title').value = exp.title;
+                    document.getElementById('exp-cost').value = exp.cost;
+                    document.getElementById('exp-category').value = exp.category;
+                    document.getElementById('exp-qty').value = exp.qty || 1;
+                    document.getElementById('exp-uom').value = exp.uom || 'pcs';
+                    document.getElementById('exp-date').value = exp.date;
+                }
+            } else {
+                document.getElementById('expense-modal-title').textContent = 'Add Expense';
+                document.getElementById('expense-form').reset();
+                document.getElementById('expense-id').value = '';
+                document.getElementById('exp-date').valueAsDate = new Date();
+                document.getElementById('exp-qty').value = 1;
+            }
+        }
+
+        function closeExpenseModal() {
+            document.getElementById('expense-modal').classList.add('hidden');
+        }
+
+        function handleExpenseSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('expense-id').value;
+            const title = document.getElementById('exp-title').value;
+            const cost = parseFloat(document.getElementById('exp-cost').value);
+            const category = document.getElementById('exp-category').value;
+            const qty = parseFloat(document.getElementById('exp-qty').value) || 1;
+            const uom = document.getElementById('exp-uom').value;
+            const date = document.getElementById('exp-date').value;
+
+            if (id) {
+                const exp = appData.expenses.find(item => item.id === id);
+                if (exp) {
+                    exp.title = title;
+                    exp.cost = cost;
+                    exp.category = category;
+                    exp.qty = qty;
+                    exp.uom = uom;
+                    exp.date = date;
+                }
+            } else {
+                const newExp = {
+                    id: 'exp_' + Date.now(),
+                    projectId: appData.activeProjectId,
+                    title,
+                    cost,
+                    category,
+                    qty,
+                    uom,
+                    date
+                };
+                appData.expenses.push(newExp);
+            }
+
+            saveToLocalStorage();
+            closeExpenseModal();
+            renderAll();
+        }
+
+        function editExpense(id) {
+            openExpenseModal(id);
+        }
+
+        function deleteExpense(id) {
+            if (confirm('Delete this expense record?')) {
+                appData.expenses = appData.expenses.filter(e => e.id !== id);
+                saveToLocalStorage();
+                renderAll();
+            }
+        }
+
+        // Receipt Scanner & OCR Feature
+        let currentReceiptImageBlob = null;
+
+        function handleReceiptImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            currentReceiptImageBlob = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('receipt-preview-img').src = e.target.result;
+                document.getElementById('scanner-dropzone-content').parentElement.classList.add('hidden');
+                document.getElementById('scanner-process-area').classList.remove('hidden');
+                document.getElementById('ocr-result-form').classList.add('hidden');
+                document.getElementById('scanner-status-text').textContent = 'Receipt Loaded Successfully';
+                document.getElementById('scanner-progress-sub').textContent = 'Click "Extract Data" to perform OCR scanning.';
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function resetScanner() {
+            currentReceiptImageBlob = null;
+            document.getElementById('receipt-file-input').value = '';
+            document.getElementById('scanner-dropzone-content').parentElement.classList.remove('hidden');
+            document.getElementById('scanner-process-area').classList.add('hidden');
+            document.getElementById('ocr-result-form').classList.add('hidden');
+            document.getElementById('scanner-loader').classList.add('hidden');
+            document.getElementById('scanner-progress-bar').style.width = '0%';
+        }
+
+        function runTesseractOCR() {
+            if (!currentReceiptImageBlob) return;
+
+            const statusText = document.getElementById('scanner-status-text');
+            const progressSub = document.getElementById('scanner-progress-sub');
+            const loader = document.getElementById('scanner-loader');
+            const progressBar = document.getElementById('scanner-progress-bar');
+            const btnRun = document.getElementById('btn-run-ocr');
+
+            loader.classList.remove('hidden');
+            btnRun.disabled = true;
+            statusText.textContent = 'Processing OCR...';
+
+            Tesseract.recognize(
+                currentReceiptImageBlob,
+                'eng',
+                {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const pct = Math.round(m.progress * 100);
+                            progressBar.style.width = pct + '%';
+                            progressSub.textContent = `Analyzing image text... ${pct}%`;
+                        }
+                    }
+                }
+            ).then(({ data: { text } }) => {
+                loader.classList.add('hidden');
+                btnRun.disabled = false;
+                statusText.textContent = 'OCR Extraction Complete!';
+                progressSub.textContent = 'Review and adjust extracted values below.';
+
+                document.getElementById('ocr-raw-text').value = text;
+
+                // Simple regex heuristic to guess total cost and vendor title
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length > 0) {
+                    document.getElementById('ocr-extracted-title').value = lines[0];
+                }
+
+                // Look for currency amounts or total keywords
+                let detectedTotal = 0;
+                const priceRegex = /\b(?:total|amount|sum|due)?[:\s]*[\$]?(\d+\.\d{2})\b/gi;
+                let match;
+                let amounts = [];
+                while ((match = priceRegex.exec(text)) !== null) {
+                    amounts.push(parseFloat(match[1]));
+                }
+
+                if (amounts.length > 0) {
+                    // Usually the maximum value or last value is the total
+                    detectedTotal = Math.max(...amounts);
+                } else {
+                    // Fallback search for any numbers with decimal points
+                    const genericDecimal = /\b(\d+\.\d{2})\b/g;
+                    let matches = text.match(genericDecimal);
+                    if (matches && matches.length > 0) {
+                        const parsed = matches.map(m => parseFloat(m));
+                        detectedTotal = Math.max(...parsed);
+                    }
+                }
+
+                document.getElementById('ocr-extracted-cost').value = detectedTotal > 0 ? detectedTotal.toFixed(2) : '0.00';
+                document.getElementById('ocr-result-form').classList.remove('hidden');
+            }).catch(err => {
+                console.error(err);
+                loader.classList.add('hidden');
+                btnRun.disabled = false;
+                statusText.textContent = 'OCR Scanning Failed';
+                progressSub.textContent = 'Please try another image or enter details manually.';
+            });
+        }
+
+        function saveOcrAsExpense() {
+            if (!appData.activeProjectId) {
+                alert('Please select an active project first.');
+                switchTab('projects');
+                return;
+            }
+
+            const title = document.getElementById('ocr-extracted-title').value || 'Scanned Receipt Item';
+            const cost = parseFloat(document.getElementById('ocr-extracted-cost').value) || 0;
+
+            const newExp = {
+                id: 'exp_' + Date.now(),
+                projectId: appData.activeProjectId,
+                title,
+                cost,
+                category: 'Materials',
+                qty: 1,
+                uom: 'ls',
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            appData.expenses.push(newExp);
+            saveToLocalStorage();
+            renderAll();
+            alert('Receipt successfully recorded as an expense item!');
+            switchTab('expenses');
+            resetScanner();
+        }
+
+        // Analytics & Chart Rendering
+        function renderCharts() {
+            const activeProj = appData.projects.find(p => p.id === appData.activeProjectId);
+            const budgetEl = document.getElementById('analytics-budget');
+            const spentEl = document.getElementById('analytics-spent');
+            const progressBar = document.getElementById('analytics-progress-bar');
+            const statusMsg = document.getElementById('analytics-status-msg');
+
+            if (!activeProj) {
+                budgetEl.textContent = '$0.00';
+                spentEl.textContent = '$0.00';
+                progressBar.style.width = '0%';
+                return;
+            }
+
+            const projExpenses = appData.expenses.filter(e => e.projectId === activeProj.id);
+            const totalSpent = projExpenses.reduce((sum, e) => sum + Number(e.cost || 0), 0);
+            const totalBudget = Number(activeProj.budget);
+            const pct = totalBudget > 0 ? Math.min(100, Math.round((totalSpent / totalBudget) * 100)) : 0;
+
+            budgetEl.textContent = `$${totalBudget.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            spentEl.textContent = `$${totalSpent.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            progressBar.style.width = `${pct}%`;
+
+            if (pct > 100) {
+                progressBar.className = 'bg-red-600 h-full rounded-full transition-all duration-500';
+                statusMsg.textContent = 'Warning: You have exceeded your project budget allocation!';
+                statusMsg.className = 'text-xs text-red-600 font-semibold';
+            } else {
+                progressBar.className = 'bg-brand-600 h-full rounded-full transition-all duration-500';
+                statusMsg.textContent = `You have utilized ${pct}% of your total project budget.`;
+                statusMsg.className = 'text-xs text-slate-500';
+            }
+
+            // Category breakdown
+            const categories = ['Materials', 'Labor', 'Permits', 'Tools', 'Other'];
+            const catTotals = categories.map(cat => {
+                return projExpenses.filter(e => e.category === cat).reduce((sum, e) => sum + Number(e.cost || 0), 0);
+            });
+
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) {
+                categoryChartInstance.destroy();
+            }
+
+            categoryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: catTotals,
+                        backgroundColor: ['#ea580c', '#f97316', '#fb923c', '#fdba74', '#fed7aa'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Application Update & Service Worker Checker
+        function checkForAppUpdates() {
+            const updateIcon = document.getElementById('update-icon');
+            if (updateIcon) updateIcon.classList.add('fa-spin');
+
+            if (window.appServiceWorkerReg) {
+                window.appServiceWorkerReg.update().then(() => {
+                    setTimeout(() => {
+                        if (updateIcon) updateIcon.classList.remove('fa-spin');
+                        alert('Your application is up to date with the latest version!');
+                    }, 600);
+                }).catch(err => {
+                    if (updateIcon) updateIcon.classList.remove('fa-spin');
+                    alert('Unable to check for updates at this time.');
+                });
+            } else {
+                setTimeout(() => {
+                    if (updateIcon) updateIcon.classList.remove('fa-spin');
+                    alert('My BuildTrack is running the latest built version.');
+                }, 600);
+            }
+        }
+
+        // Settings Modal Controls
+        function openSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        // Data Export Utility
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `my_buildtrack_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // Utility Security Escape
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
