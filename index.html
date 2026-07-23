@@ -81,7 +81,7 @@
         </button>
     </div>
 
-    <!-- Top Banner with Logo Navigation -->
+    <!-- Top Banner with Clickable Logo Navigation -->
     <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-10">
         <div onclick="switchTab('home')" class="flex items-center space-x-2 cursor-pointer">
             <div class="w-9 h-9 bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-md">
@@ -186,7 +186,7 @@
             </div>
         </section>
 
-        <!-- Receipts & OCR Tab -->
+        <!-- Receipts & OCR Tab (Restored) -->
         <section id="tab-receipts" class="p-4 space-y-4 max-w-lg mx-auto hidden">
             <h2 class="text-lg font-bold text-slate-800">Receipt Scanner (OCR)</h2>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
@@ -232,7 +232,7 @@
                 <div class="p-4 flex items-center justify-between">
                     <div>
                         <h4 class="font-medium text-sm text-slate-800">App Version</h4>
-                        <p class="text-xs text-slate-500">My BuildTrack v1.2.3</p>
+                        <p class="text-xs text-slate-500">My BuildTrack v1.2.4</p>
                     </div>
                     <button onclick="manualCheckForUpdates()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition">
                         Check Updates
@@ -353,7 +353,7 @@
             });
         }
 
-        // Service Worker Management & Update Checks
+        // Service Worker Management & Fixed Update Checks
         let deferredWorker = null;
 
         function initServiceWorker() {
