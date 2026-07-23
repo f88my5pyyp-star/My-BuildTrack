@@ -3,7 +3,7 @@
    Cache Name: my-buildtrack-v1
    ========================================================== */
 
-const CACHE_NAME = 'my-buildtrack-v1';
+const CACHE_NAME = 'my-buildtrack-v2';
 
 // Static assets to pre-cache for offline capability
 const PRECACHE_ASSETS = [
