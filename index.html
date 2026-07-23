@@ -16,6 +16,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+  <!-- Lucide Icons for Modern UI/UX -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
   <style>
     :root[data-theme="dark"] {
       --bg-color: #0b0f19;
@@ -52,15 +55,64 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg-color); color: var(--text); padding-bottom: 90px; transition: background 0.3s ease, color 0.3s ease; background-image: var(--header-glow); background-repeat: no-repeat; min-height: 100vh; }
 
+    /* Launch Screen Overlay */
+    #launch-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    #launch-screen.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .launch-logo-container {
+      width: 84px;
+      height: 84px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 0 24px rgba(217, 70, 239, 0.4);
+      animation: pulseLogo 1.5s infinite alternate;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f472b6, #d946ef);
+    }
+    .launch-logo-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .launch-title {
+      margin-top: 16px;
+      font-size: 1.3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f472b6, #d946ef);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.3px;
+    }
+    @keyframes pulseLogo {
+      0% { transform: scale(0.95); opacity: 0.85; }
+      100% { transform: scale(1.05); opacity: 1; }
+    }
+
     header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: rgba(11, 15, 25, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--card-border); }
-    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.15s ease; }
+    .brand:active { transform: scale(0.96); }
     .brand img { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 12px rgba(217, 70, 239, 0.3); }
     .brand-title { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.3px; background: linear-gradient(135deg, #f472b6, #d946ef); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 68px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; justify-style: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-    .nav-btn { background: none; border: none; color: var(--subtext); display: flex; flex-direction: column; align-items: center; font-size: 0.72rem; gap: 4px; width: 20%; cursor: pointer; transition: color 0.2s, transform 0.1s; }
-    .nav-btn .icon { font-size: 1.3rem; }
-    .nav-btn.active { color: var(--text); font-weight: 700; }
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 68px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+    .nav-btn { background: none; border: none; color: var(--subtext); display: flex; flex-direction: column; align-items: center; font-size: 0.72rem; gap: 4px; width: 20%; cursor: pointer; transition: color 0.2s, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .nav-btn .icon { font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+    .nav-btn.active { color: var(--text); font-weight: 700; transform: translateY(-2px); }
+    .nav-btn:active { transform: scale(0.9); }
 
     body[data-tab="dashboard"] .nav-btn[onclick*="dashboard"] { color: var(--theme-dash); }
     body[data-tab="projects"] .nav-btn[onclick*="projects"] { color: var(--theme-proj); }
@@ -73,9 +125,9 @@
     .page.active { display: block; animation: pageSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes pageSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 18px; margin-bottom: 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 16px; }
-    h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 18px; margin-bottom: 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); transition: transform 0.2s ease; }
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .metric-box { padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); }
@@ -96,19 +148,19 @@
 
     .form-group { margin-bottom: 14px; }
     label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--subtext); margin-bottom: 6px; }
-    input, select, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
-    input:focus, select:focus { border-color: var(--theme-dash); }
+    input, select, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus, select:focus { border-color: var(--theme-dash); box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.15); }
 
-    .btn { width: 100%; padding: 13px; border-radius: 12px; border: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: transform 0.1s, opacity 0.2s; }
-    .btn:active { transform: scale(0.98); }
-    .btn-dash { background: linear-gradient(135deg, #d946ef, #c026d3); color: white; }
-    .btn-proj { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
-    .btn-exp  { background: linear-gradient(135deg, #10b981, #059669); color: white; }
-    .btn-rep  { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+    .btn { width: 100%; padding: 13px; border-radius: 12px; border: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s, box-shadow 0.2s; }
+    .btn:active { transform: scale(0.96); }
+    .btn-dash { background: linear-gradient(135deg, #d946ef, #c026d3); color: white; box-shadow: 0 4px 14px rgba(217, 70, 239, 0.3); }
+    .btn-proj { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3); }
+    .btn-exp  { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); }
+    .btn-rep  { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3); }
     .btn-danger { background: #ef4444; color: white; }
     .btn-small { padding: 6px 12px; font-size: 0.75rem; border-radius: 8px; width: auto; }
 
-    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--card-border); }
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--card-border); transition: background 0.15s ease; }
     .item-row:last-child { border-bottom: none; }
     .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
     .badge-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
@@ -117,7 +169,7 @@
     .cat-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); color: var(--subtext); }
 
     .btn-group { display: flex; gap: 6px; }
-    .item-link { font-size: 0.75rem; color: var(--theme-proj); text-decoration: none; display: inline-block; margin-top: 4px; font-weight: 600; cursor: pointer; }
+    .item-link { font-size: 0.75rem; color: var(--theme-proj); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 600; cursor: pointer; }
 
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; backdrop-filter: blur(10px); justify-content: center; align-items: center; padding: 20px; }
     .modal-content { max-width: 100%; max-height: 80vh; border-radius: 12px; object-fit: contain; }
@@ -125,18 +177,26 @@
 </head>
 <body data-tab="dashboard">
 
+  <!-- Launch Screen Overlay -->
+  <div id="launch-screen">
+    <div class="launch-logo-container">
+      <img src="logo.png" alt="My BuildTrack Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='🏗️';">
+    </div>
+    <div class="launch-title">My BuildTrack</div>
+  </div>
+
   <header>
-    <div class="brand">
-      <img src="logo.png" alt="My BuildTrack Logo">
+    <div class="brand" onclick="goHome()">
+      <img src="logo.png" alt="My BuildTrack Logo" onerror="this.style.display='none';">
       <div class="brand-title">My BuildTrack</div>
     </div>
-    <button onclick="toggleDarkMode()" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🌓</button>
+    <button onclick="toggleDarkMode()" style="background:var(--card-bg); border:1px solid var(--card-border); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text); cursor:pointer; transition: transform 0.15s;" title="Toggle Theme"><i data-lucide="sun-medium" style="width:18px;height:18px;"></i></button>
   </header>
 
   <div class="container">
     <!-- DASHBOARD PAGE -->
     <div id="page-dashboard" class="page active">
-      <h1>📊 Dashboard</h1>
+      <h1><i data-lucide="layout-dashboard" style="color:var(--theme-dash); width:28px; height:28px;"></i> Dashboard</h1>
       <div id="dash-alert-container"></div>
 
       <div class="card">
@@ -166,16 +226,16 @@
       </div>
 
       <div class="card">
-        <h2>Recent Expenses</h2>
+        <h2><i data-lucide="receipt" style="width:20px;height:20px;color:var(--theme-dash);"></i> Recent Expenses</h2>
         <div id="dash-recent-list"></div>
       </div>
     </div>
 
     <!-- PROJECTS PAGE -->
     <div id="page-projects" class="page">
-      <h1>📁 Projects</h1>
+      <h1><i data-lucide="folder-kanban" style="color:var(--theme-proj); width:28px; height:28px;"></i> Projects</h1>
       <div class="card">
-        <h2 id="proj-form-title">Add Project</h2>
+        <h2 id="proj-form-title"><i data-lucide="plus-circle" style="width:20px;height:20px;color:var(--theme-proj);"></i> Add Project</h2>
         <form id="project-form">
           <input type="hidden" id="proj-id">
           <div class="form-group">
@@ -206,14 +266,14 @@
               <input type="date" id="proj-target" required>
             </div>
           </div>
-          <button type="submit" class="btn btn-proj" style="margin-top:6px;">Save Project</button>
+          <button type="submit" class="btn btn-proj" style="margin-top:6px;"><i data-lucide="check" style="width:18px;height:18px;"></i> Save Project</button>
           <button type="button" id="proj-cancel-btn" class="btn btn-small" style="display:none; margin:10px auto 0 auto; background:transparent; color:var(--subtext);" onclick="resetProjectForm()">Cancel Editing</button>
         </form>
       </div>
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h2>Project Directory</h2>
+          <h2><i data-lucide="list-tree" style="width:20px;height:20px;color:var(--theme-proj);"></i> Project Directory</h2>
           <select id="proj-status-filter" style="width:auto; padding:6px 10px; font-size:0.8rem;" onchange="render()">
             <option value="All">All Statuses</option>
             <option value="Planning">Planning</option>
@@ -227,9 +287,9 @@
 
     <!-- EXPENSES PAGE -->
     <div id="page-expenses" class="page">
-      <h1>💸 Expenses</h1>
+      <h1><i data-lucide="wallet" style="color:var(--theme-exp); width:28px; height:28px;"></i> Expenses</h1>
       <div class="card">
-        <h2 id="exp-form-title">Add Expense Item</h2>
+        <h2 id="exp-form-title"><i data-lucide="plus-circle" style="width:20px;height:20px;color:var(--theme-exp);"></i> Add Expense Item</h2>
         <form id="expense-form">
           <input type="hidden" id="exp-id">
           <div class="form-group">
@@ -282,13 +342,13 @@
             <input type="hidden" id="exp-receipt-data">
             <div id="receipt-preview-status" style="font-size:0.75rem; color:#10b981; margin-top:4px; font-weight:600;"></div>
           </div>
-          <button type="submit" class="btn btn-exp" style="margin-top:6px;">Add Expense Item</button>
+          <button type="submit" class="btn btn-exp" style="margin-top:6px;"><i data-lucide="plus" style="width:18px;height:18px;"></i> Add Expense Item</button>
           <button type="button" id="exp-cancel-btn" class="btn btn-small" style="display:none; margin:10px auto 0 auto; background:transparent; color:var(--subtext);" onclick="resetExpenseForm()">Cancel Editing</button>
         </form>
       </div>
 
       <div class="card">
-        <h2>Expense Log</h2>
+        <h2><i data-lucide="file-spreadsheet" style="width:20px;height:20px;color:var(--theme-exp);"></i> Expense Log</h2>
         <div class="grid-2" style="margin-bottom:12px;">
           <select id="expense-cat-filter" onchange="render()">
             <option value="All">All Categories</option>
@@ -307,9 +367,9 @@
 
     <!-- REPORTS PAGE -->
     <div id="page-reports" class="page">
-      <h1>📄 Export Reports</h1>
+      <h1><i data-lucide="file-text" style="color:var(--theme-rep); width:28px; height:28px;"></i> Export Reports</h1>
       <div class="card">
-        <h2>Generate Summary</h2>
+        <h2><i data-lucide="download-cloud" style="width:20px;height:20px;color:var(--theme-rep);"></i> Generate Summary</h2>
         <div class="form-group">
           <label>Select Project</label>
           <select id="pdf-project-select"></select>
@@ -321,26 +381,26 @@
             <option value="EXCEL">Excel Spreadsheet (.xlsx)</option>
           </select>
         </div>
-        <button class="btn btn-rep" onclick="downloadReport()">📥 Share / Export Report</button>
+        <button class="btn btn-rep" onclick="downloadReport()"><i data-lucide="download" style="width:18px;height:18px;"></i> Share / Export Report</button>
       </div>
     </div>
 
     <!-- SETTINGS PAGE -->
     <div id="page-settings" class="page">
-      <h1>⚙️ Settings</h1>
+      <h1><i data-lucide="settings" style="color:var(--theme-set); width:28px; height:28px;"></i> Settings</h1>
       <div class="card">
-        <h2>App Version & Status</h2>
+        <h2><i data-lucide="info" style="width:20px;height:20px;color:var(--theme-set);"></i> App Version & Status</h2>
         <p style="font-size:0.85rem; color:var(--subtext);">Version: <strong id="app-version-tag">v2.2.0</strong></p>
         <p id="update-msg" style="font-size:0.8rem; margin-top:6px; color:var(--subtext);"></p>
-        <button id="update-btn" class="btn btn-small" style="margin-top:10px; background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);" onclick="checkForAppUpdate()">Check for App Updates</button>
+        <button id="update-btn" class="btn btn-small" style="margin-top:10px; background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%;" onclick="checkForAppUpdate()">Check for App Updates</button>
       </div>
 
       <div class="card">
-        <h2>Data Management</h2>
-        <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; margin-bottom:8px;" onclick="manualSave()">💾 Force Manual Save</button>
-        <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; margin-bottom:8px;" onclick="exportData()">📤 Export Backup JSON</button>
-        <label class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; text-align:center; cursor:pointer;">
-          📥 Import Backup JSON
+        <h2><i data-lucide="database" style="width:20px;height:20px;color:var(--theme-set);"></i> Data Management</h2>
+        <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; margin-bottom:8px;" onclick="manualSave()"><i data-lucide="save" style="width:16px;height:16px;display:inline;vertical-align:middle;margin-right:4px;"></i> Force Manual Save</button>
+        <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; margin-bottom:8px;" onclick="exportData()"><i data-lucide="upload" style="width:16px;height:16px;display:inline;vertical-align:middle;margin-right:4px;"></i> Export Backup JSON</button>
+        <label class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; text-align:center; cursor:pointer; display:block; padding:10px;">
+          <i data-lucide="download" style="width:16px;height:16px;display:inline;vertical-align:middle;margin-right:4px;"></i> Import Backup JSON
           <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
         </label>
         <p id="last-saved-time" style="font-size:0.75rem; color:var(--subtext); margin-top:8px; text-align:center;"></p>
@@ -382,11 +442,11 @@
 
   <!-- Bottom Navigation -->
   <nav class="nav-bar">
-    <button class="nav-btn active" onclick="switchTab('dashboard', this)"><span class="icon">📊</span>Dashboard</button>
-    <button class="nav-btn" onclick="switchTab('projects', this)"><span class="icon">📁</span>Projects</button>
-    <button class="nav-btn" onclick="switchTab('expenses', this)"><span class="icon">💸</span>Expenses</button>
-    <button class="nav-btn" onclick="switchTab('reports', this)"><span class="icon">📄</span>Reports</button>
-    <button class="nav-btn" onclick="switchTab('settings', this)"><span class="icon">⚙️</span>Settings</button>
+    <button class="nav-btn active" onclick="switchTab('dashboard', this)"><span class="icon"><i data-lucide="layout-dashboard" style="width:22px;height:22px;"></i></span>Dashboard</button>
+    <button class="nav-btn" onclick="switchTab('projects', this)"><span class="icon"><i data-lucide="folder-kanban" style="width:22px;height:22px;"></i></span>Projects</button>
+    <button class="nav-btn" onclick="switchTab('expenses', this)"><span class="icon"><i data-lucide="wallet" style="width:22px;height:22px;"></i></span>Expenses</button>
+    <button class="nav-btn" onclick="switchTab('reports', this)"><span class="icon"><i data-lucide="file-text" style="width:22px;height:22px;"></i></span>Reports</button>
+    <button class="nav-btn" onclick="switchTab('settings', this)"><span class="icon"><i data-lucide="settings" style="width:22px;height:22px;"></i></span>Settings</button>
   </nav>
 
   <script>
@@ -406,6 +466,17 @@
       }
     }
 
+    // Launch Screen Fade Out Transition
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const launchScreen = document.getElementById('launch-screen');
+        if (launchScreen) {
+          launchScreen.classList.add('fade-out');
+          setTimeout(() => launchScreen.remove(), 600);
+        }
+      }, 700);
+    });
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(reg => {
         reg.addEventListener('updatefound', () => {
@@ -413,9 +484,10 @@
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               const updateBtn = document.getElementById('update-btn');
-              updateBtn.textContent = '🚀 Update Available! Tap to Apply';
+              updateBtn.innerHTML = '<i data-lucide="rocket" style="width:16px;height:16px;display:inline;vertical-align:middle;margin-right:4px;"></i> Update Available! Tap to Apply';
               updateBtn.classList.add('btn-dash');
               document.getElementById('update-msg').textContent = 'A new version of My BuildTrack is ready.';
+              lucide.createIcons();
               triggerHaptic('heavy');
             }
           });
@@ -432,22 +504,39 @@
     }
 
     function checkForAppUpdate() {
+      triggerHaptic('medium');
       const msg = document.getElementById('update-msg');
+      const updateBtn = document.getElementById('update-btn');
+      
       if (newWorker) {
         newWorker.postMessage({ action: 'skipWaiting' });
-      } else if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration().then(reg => {
-          if (reg) {
-            msg.textContent = "Checking for latest version...";
-            reg.update().catch(() => {});
-            setTimeout(() => {
-              if (!newWorker && msg.textContent.includes("Checking")) {
-                msg.textContent = "✓ You are using the latest version!";
-              }
-            }, 2000);
-          }
-        });
+        return;
       }
+
+      msg.textContent = "Checking for updates...";
+      updateBtn.disabled = true;
+
+      setTimeout(() => {
+        updateBtn.disabled = false;
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistration().then(reg => {
+            if (reg) {
+              reg.update().then(() => {
+                if (!newWorker) {
+                  msg.textContent = "✓ You are running the latest version (" + APP_VERSION + ").";
+                  triggerHaptic('light');
+                }
+              }).catch(() => {
+                msg.textContent = "✓ Application is up to date.";
+              });
+            } else {
+              msg.textContent = "✓ Application is up to date.";
+            }
+          });
+        } else {
+          msg.textContent = "✓ Application is up to date.";
+        }
+      }, 1000);
     }
 
     document.getElementById('exp-receipt-input').addEventListener('change', function(e) {
@@ -521,11 +610,23 @@
         const tx = db.transaction('store', 'readwrite');
         tx.objectStore('store').put(data, 'app_data');
       }
-      document.getElementById('last-saved-time').textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+      const timeStr = `Saved at ${new Date().toLocaleTimeString()}`;
+      const savedEl = document.getElementById('last-saved-time');
+      if (savedEl) savedEl.textContent = timeStr;
       render();
     }
 
-    function manualSave() { autoSave(); alert('Data saved successfully!'); }
+    function manualSave() {
+      triggerHaptic('medium');
+      autoSave();
+      const savedEl = document.getElementById('last-saved-time');
+      const originalText = savedEl.textContent;
+      savedEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ Data saved successfully!</span>`;
+      setTimeout(() => {
+        savedEl.textContent = originalText;
+      }, 2500);
+    }
+
     function formatAUD(amount) { return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(amount || 0); }
 
     function switchTab(tabId, el) {
@@ -538,7 +639,15 @@
       render();
     }
 
+    function goHome() {
+      triggerHaptic('selection');
+      const dashBtn = document.querySelector('.nav-btn[onclick*="dashboard"]');
+      switchTab('dashboard', dashBtn);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function toggleDarkMode() {
+      triggerHaptic('light');
       data.settings.darkMode = !data.settings.darkMode;
       applyTheme();
       autoSave();
@@ -550,6 +659,7 @@
 
     document.getElementById('project-form').addEventListener('submit', (e) => {
       e.preventDefault();
+      triggerHaptic('medium');
       const id = document.getElementById('proj-id').value;
       const title = document.getElementById('proj-title').value;
       const status = document.getElementById('proj-status').value;
@@ -577,15 +687,17 @@
       document.getElementById('proj-start').value = proj.start;
       document.getElementById('proj-target').value = proj.target;
       document.getElementById('proj-budget').value = proj.budget;
-      document.getElementById('proj-form-title').textContent = "Edit Project";
+      document.getElementById('proj-form-title').innerHTML = `<i data-lucide="edit-3" style="width:20px;height:20px;color:var(--theme-proj);"></i> Edit Project`;
       document.getElementById('proj-cancel-btn').style.display = "block";
+      lucide.createIcons();
     }
 
     function resetProjectForm() {
       document.getElementById('project-form').reset();
       document.getElementById('proj-id').value = '';
-      document.getElementById('proj-form-title').textContent = "Add Project";
+      document.getElementById('proj-form-title').innerHTML = `<i data-lucide="plus-circle" style="width:20px;height:20px;color:var(--theme-proj);"></i> Add Project`;
       document.getElementById('proj-cancel-btn').style.display = "none";
+      lucide.createIcons();
     }
 
     function deleteProject(id) {
@@ -599,6 +711,7 @@
 
     document.getElementById('expense-form').addEventListener('submit', (e) => {
       e.preventDefault();
+      triggerHaptic('medium');
       const id = document.getElementById('exp-id').value;
       const projectId = document.getElementById('exp-project-id').value;
       const desc = document.getElementById('exp-desc').value;
@@ -636,8 +749,9 @@
       document.getElementById('exp-category').value = exp.category;
       document.getElementById('exp-receipt-data').value = exp.receipt || '';
       document.getElementById('receipt-preview-status').textContent = exp.receipt ? '✓ Receipt Attached' : '';
-      document.getElementById('exp-form-title').textContent = "Edit Expense Item";
+      document.getElementById('exp-form-title').innerHTML = `<i data-lucide="edit-3" style="width:20px;height:20px;color:var(--theme-exp);"></i> Edit Expense Item`;
       document.getElementById('exp-cancel-btn').style.display = "block";
+      lucide.createIcons();
     }
 
     function resetExpenseForm() {
@@ -646,8 +760,9 @@
       document.getElementById('exp-qty').value = '1';
       document.getElementById('exp-receipt-data').value = '';
       document.getElementById('receipt-preview-status').textContent = '';
-      document.getElementById('exp-form-title').textContent = "Add Expense Item";
+      document.getElementById('exp-form-title').innerHTML = `<i data-lucide="plus-circle" style="width:20px;height:20px;color:var(--theme-exp);"></i> Add Expense Item`;
       document.getElementById('exp-cancel-btn').style.display = "none";
+      lucide.createIcons();
     }
 
     function deleteExpense(id) {
@@ -694,10 +809,10 @@
       if (totalBudget > 0) {
         if (totalSpent > totalBudget) {
           progressBar.classList.add('progress-danger');
-          alertContainer.innerHTML = `<div class="alert-banner alert-banner-danger">⚠️ Budget Exceeded by ${formatAUD(totalSpent - totalBudget)}</div>`;
+          alertContainer.innerHTML = `<div class="alert-banner alert-banner-danger"><i data-lucide="alert-triangle" style="width:18px;height:18px;"></i> Budget Exceeded by ${formatAUD(totalSpent - totalBudget)}</div>`;
         } else if (usagePct >= 85) {
           progressBar.classList.add('progress-warning');
-          alertContainer.innerHTML = `<div class="alert-banner alert-banner-warning">⚠️ High Budget Usage (${usagePct}%)</div>`;
+          alertContainer.innerHTML = `<div class="alert-banner alert-banner-warning"><i data-lucide="alert-circle" style="width:18px;height:18px;"></i> High Budget Usage (${usagePct}%)</div>`;
         }
       }
 
@@ -755,8 +870,8 @@
                   <span class="badge ${badgeClass}" style="margin-left:6px;">${p.status}</span>
                 </div>
                 <div class="btn-group">
-                  <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);" onclick="editProject(${p.id})">✏️</button>
-                  <button class="btn btn-small btn-danger" onclick="deleteProject(${p.id})">🗑️</button>
+                  <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);" onclick="editProject(${p.id})"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
+                  <button class="btn btn-small btn-danger" onclick="deleteProject(${p.id})"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                 </div>
               </div>
               <div style="font-size:0.8rem; color:var(--subtext);">
@@ -806,19 +921,24 @@
                 <div style="font-size:0.75rem; color:var(--subtext);">
                   ${e.qty || 1} ${e.unitsType || 'Pcs'} @ ${formatAUD(e.unitCost || e.cost)}
                 </div>
-                ${e.url ? `<a class="item-link" href="${e.url}" target="_blank">🔗 Product Link</a>` : ''}
-                ${e.receipt ? `<span class="item-link" style="margin-left:8px;" onclick="openReceiptModal('${e.receipt}')">🖼️ View Receipt</span>` : ''}
+                ${e.url ? `<a class="item-link" href="${e.url}" target="_blank"><i data-lucide="external-link" style="width:12px;height:12px;"></i> Product Link</a>` : ''}
+                ${e.receipt ? `<span class="item-link" style="margin-left:8px;" onclick="openReceiptModal('${e.receipt}')"><i data-lucide="image" style="width:12px;height:12px;"></i> View Receipt</span>` : ''}
               </div>
               <div style="text-align:right;">
                 <div style="font-weight:800; font-size:1rem; color:var(--theme-exp);">${formatAUD(e.cost)}</div>
                 <div class="btn-group" style="margin-top:6px; justify-content:flex-end;">
-                  <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);" onclick="editExpense(${e.id})">✏️</button>
-                  <button class="btn btn-small btn-danger" onclick="deleteExpense(${e.id})">🗑️</button>
+                  <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);" onclick="editExpense(${e.id})"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
+                  <button class="btn btn-small btn-danger" onclick="deleteExpense(${e.id})"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                 </div>
               </div>
             </div>
           `;
         });
+      }
+
+      // Render Lucide Icons
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
       }
     }
 
