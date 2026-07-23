@@ -68,7 +68,7 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.6s ease, visibility 0.6s ease;
+      transition: opacity 1.2s ease, visibility 1.2s ease;
     }
     #launch-screen.fade-out {
       opacity: 0;
@@ -80,7 +80,7 @@
       border-radius: 36px;
       overflow: hidden;
       box-shadow: 0 0 32px rgba(217, 70, 239, 0.45);
-      animation: pulseLogo 1.5s infinite alternate;
+      animation: pulseLogo 2.5s infinite alternate;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -532,15 +532,15 @@
       }
     }
 
-    // Launch Screen Fade Out Transition
+    // Launch Screen Fade Out Transition (Extended timing)
     window.addEventListener('load', () => {
       setTimeout(() => {
         const launchScreen = document.getElementById('launch-screen');
         if (launchScreen) {
           launchScreen.classList.add('fade-out');
-          setTimeout(() => launchScreen.remove(), 600);
+          setTimeout(() => launchScreen.remove(), 1200);
         }
-      }, 700);
+      }, 1500);
     });
 
     if ('serviceWorker' in navigator) {
@@ -619,7 +619,6 @@
         reader.onload = async function(evt) {
           const img = new Image();
           img.onload = async function() {
-            // Resize image for optimal OCR performance
             const MAX_WIDTH = 1200;
             let width = img.width;
             let height = img.height;
@@ -635,28 +634,22 @@
             ctx.drawImage(img, 0, 0, width, height);
             const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
 
-            // Store receipt image base64
             document.getElementById('exp-receipt-data').value = compressedBase64;
 
-            // Run Tesseract OCR
             statusEl.textContent = "🔍 Reading text from receipt...";
             const result = await Tesseract.recognize(compressedBase64, 'eng');
             const text = result.data.text;
 
             if (text) {
-              // Attempt to parse monetary amounts (e.g. $45.90, 120.00)
               const priceMatches = text.match(/\b\d+[\.,]\d{2}\b/g);
               if (priceMatches && priceMatches.length > 0) {
-                // Pick the highest value as likely total cost or first valid cost
                 const cleanPrices = priceMatches.map(p => parseFloat(p.replace(',', '.')));
                 const maxPrice = Math.max(...cleanPrices);
                 document.getElementById('exp-unit-cost').value = maxPrice.toFixed(2);
               }
 
-              // Attempt to infer item description from non-empty lines
               const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
               if (lines.length > 0) {
-                // Filter out common receipt header noise words
                 const validLines = lines.filter(l => !/total|tax|cash|card|change|receipt|date|thank|welcome/i.test(l));
                 if (validLines.length > 0) {
                   document.getElementById('exp-desc').value = validLines[0].substring(0, 40);
@@ -886,13 +879,11 @@
     function render() {
       applyTheme();
 
-      // Calculated values
       const totalBudget = data.projects.reduce((acc, p) => acc + (parseFloat(p.budget) || 0), 0);
       const totalSpent = data.expenses.reduce((acc, e) => acc + (parseFloat(e.cost) || 0), 0);
       const remaining = totalBudget - totalSpent;
       const usagePct = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0;
 
-      // Dashboard Render
       document.getElementById('dash-budget').textContent = formatAUD(totalBudget);
       document.getElementById('dash-spent').textContent = formatAUD(totalSpent);
       document.getElementById('dash-remaining').textContent = formatAUD(remaining);
@@ -901,7 +892,6 @@
       const progressBar = document.getElementById('dash-progress-bar');
       progressBar.style.width = `${usagePct}%`;
 
-      // Warning & Alert Styles
       const alertContainer = document.getElementById('dash-alert-container');
       alertContainer.innerHTML = '';
       progressBar.className = 'progress-bar-fill';
@@ -916,7 +906,6 @@
         }
       }
 
-      // Recent Expenses
       const recentList = document.getElementById('dash-recent-list');
       recentList.innerHTML = '';
       if (data.expenses.length === 0) {
@@ -937,7 +926,6 @@
         });
       }
 
-      // Project Dropdown Fillers
       const expProjSelect = document.getElementById('exp-project-id');
       const pdfProjSelect = document.getElementById('pdf-project-select');
       expProjSelect.innerHTML = '';
@@ -948,7 +936,6 @@
         pdfProjSelect.innerHTML += `<option value="${p.id}">${p.title}</option>`;
       });
 
-      // Projects List Render
       const projFilter = document.getElementById('proj-status-filter').value;
       const projList = document.getElementById('projects-list');
       projList.innerHTML = '';
@@ -989,7 +976,6 @@
         });
       }
 
-      // Expenses List Render
       const catFilter = document.getElementById('expense-cat-filter').value;
       const searchVal = document.getElementById('expense-search').value.toLowerCase();
       const expList = document.getElementById('expenses-list');
@@ -1036,7 +1022,6 @@
         });
       }
 
-      // Render Lucide Icons
       if (typeof lucide !== 'undefined') {
         lucide.createIcons();
       }
@@ -1144,7 +1129,6 @@
       reader.readAsText(file);
     }
 
-    // Initialize App
     initStorage();
   </script>
 </body>
