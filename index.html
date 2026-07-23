@@ -53,11 +53,11 @@
 </head>
 <body class="h-full bg-slate-50 text-slate-900 flex flex-col overflow-hidden select-none">
 
-    <!-- Launch / Splash Screen (Enlarged and centered original hard-hat logo) -->
+    <!-- Launch / Splash Screen (Enlarged and centered to fit mobile screen) -->
     <div id="splash-screen" class="fixed inset-0 z-50 bg-brand-600 flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <div class="flex flex-col items-center animate-pulse">
-            <div class="w-32 h-32 bg-white text-brand-600 rounded-3xl flex items-center justify-center shadow-2xl mb-4 transform scale-110">
-                <i data-lucide="hard-hat" class="w-20 h-20"></i>
+            <div class="w-40 h-40 bg-white text-brand-600 rounded-3xl flex items-center justify-center shadow-2xl mb-6 transform scale-125">
+                <i data-lucide="hard-hat" class="w-24 h-24"></i>
             </div>
             <h1 class="text-3xl font-bold tracking-tight">My BuildTrack</h1>
             <p class="text-brand-100 text-sm mt-1">DIY Construction & Expense Manager</p>
@@ -102,7 +102,7 @@
     <!-- Main Content Area -->
     <main class="flex-1 overflow-y-auto relative pb-20">
         
-        <!-- Home Tab (Default landing screen on load) -->
+        <!-- Home Tab (Hub showing all tabs/features) -->
         <section id="tab-home" class="p-4 space-y-4 max-w-lg mx-auto">
             <div class="bg-gradient-to-r from-brand-600 to-blue-700 text-white p-5 rounded-2xl shadow-lg">
                 <h2 class="text-xl font-bold">Welcome Back!</h2>
@@ -134,26 +134,44 @@
                 </div>
             </div>
 
-            <!-- Quick Access Actions -->
+            <!-- Hub / Navigation Directory showing all tabs -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                <h3 class="font-semibold text-slate-800 text-sm">Quick Actions</h3>
+                <h3 class="font-semibold text-slate-800 text-sm">App Tabs & Features</h3>
                 <div class="grid grid-cols-2 gap-2">
+                    <button onclick="switchTab('projects')" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 hover:bg-brand-50 hover:text-brand-600 transition border border-slate-100 text-left">
+                        <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                            <i data-lucide="folder-kanban" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-xs">Projects</div>
+                            <div class="text-[10px] text-slate-400">Budgets & Tracking</div>
+                        </div>
+                    </button>
                     <button onclick="switchTab('receipts')" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 hover:bg-brand-50 hover:text-brand-600 transition border border-slate-100 text-left">
                         <div class="p-2 bg-brand-100 text-brand-600 rounded-lg">
                             <i data-lucide="scan-line" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <div class="font-medium text-xs">Scan Receipt</div>
-                            <div class="text-[10px] text-slate-400">OCR Extraction</div>
+                            <div class="font-medium text-xs">Receipts</div>
+                            <div class="text-[10px] text-slate-400">OCR Scanner</div>
                         </div>
                     </button>
                     <button onclick="switchTab('analytics')" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 hover:bg-brand-50 hover:text-brand-600 transition border border-slate-100 text-left">
                         <div class="p-2 bg-purple-100 text-purple-600 rounded-lg">
-                            <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
                         </div>
                         <div>
                             <div class="font-medium text-xs">Analytics</div>
-                            <div class="text-[10px] text-slate-400">View Charts</div>
+                            <div class="text-[10px] text-slate-400">Charts & Breakdown</div>
+                        </div>
+                    </button>
+                    <button onclick="switchTab('settings')" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 hover:bg-brand-50 hover:text-brand-600 transition border border-slate-100 text-left">
+                        <div class="p-2 bg-slate-200 text-slate-700 rounded-lg">
+                            <i data-lucide="settings" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-xs">Settings</div>
+                            <div class="text-[10px] text-slate-400">Updates & Version</div>
                         </div>
                     </button>
                 </div>
@@ -186,7 +204,7 @@
             </div>
         </section>
 
-        <!-- Receipts & OCR Tab (Restored) -->
+        <!-- Receipts & OCR Tab -->
         <section id="tab-receipts" class="p-4 space-y-4 max-w-lg mx-auto hidden">
             <h2 class="text-lg font-bold text-slate-800">Receipt Scanner (OCR)</h2>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
