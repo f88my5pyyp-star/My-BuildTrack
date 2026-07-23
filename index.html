@@ -1,478 +1,931 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>My BuildTrack - Project & Expense Tracker</title>
   
-  <title>My BuildTrack - Construction & Expense Management PWA</title>
-  <meta name="description" content="My BuildTrack - Progressive Web App for construction project and expense management." />
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- Export Libraries (PDF & Excel) -->
+  <!-- PWA & Theme Integration -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+
+  <!-- External Libraries for PDF & Excel Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  
-  <!-- OCR Library -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.3/dist/tesseract.min.js"></script>
-
-  <!-- PWA Metadata & Favicons -->
-  <link rel="manifest" href="site.webmanifest" />
-  <meta name="theme-color" content="#0F172A" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="My BuildTrack" />
-  <link rel="icon" type="image/svg+xml" href="logo.svg" />
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png" />
 
   <style>
-    body {
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-      background-color: #F8FAFC;
+    :root[data-theme="dark"] {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(22, 30, 49, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f3f4f6;
+      --subtext: #9ca3af;
+      --input-bg: #111827;
+      --input-border: #374151;
+      --header-glow: radial-gradient(circle at 50% -20%, rgba(217, 70, 239, 0.15), transparent 70%);
+      --theme-dash: #d946ef;
+      --theme-proj: #06b6d4;
+      --theme-exp: #10b981;
+      --theme-rep: #f59e0b;
+      --theme-set: #8b5cf6;
     }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .nav-btn.active {
-      color: #EAB308;
-      border-bottom: 2px solid #EAB308;
+
+    :root[data-theme="light"] {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: rgba(0, 0, 0, 0.08);
+      --text: #1f2937;
+      --subtext: #6b7280;
+      --input-bg: #f1f5f9;
+      --input-border: #cbd5e1;
+      --header-glow: radial-gradient(circle at 50% -20%, rgba(217, 70, 239, 0.08), transparent 70%);
+      --theme-dash: #c026d3;
+      --theme-proj: #0891b2;
+      --theme-exp: #059669;
+      --theme-rep: #d97706;
+      --theme-set: #7c3aed;
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg-color); color: var(--text); padding-bottom: 90px; transition: background 0.3s ease, color 0.3s ease; background-image: var(--header-glow); background-repeat: no-repeat; min-height: 100vh; }
+
+    header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: rgba(11, 15, 25, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--card-border); }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand img { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 12px rgba(217, 70, 239, 0.3); }
+    .brand-title { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.3px; background: linear-gradient(135deg, #f472b6, #d946ef); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 68px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; justify-style: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+    .nav-btn { background: none; border: none; color: var(--subtext); display: flex; flex-direction: column; align-items: center; font-size: 0.72rem; gap: 4px; width: 20%; cursor: pointer; transition: color 0.2s, transform 0.1s; }
+    .nav-btn .icon { font-size: 1.3rem; }
+    .nav-btn.active { color: var(--text); font-weight: 700; }
+
+    body[data-tab="dashboard"] .nav-btn[onclick*="dashboard"] { color: var(--theme-dash); }
+    body[data-tab="projects"] .nav-btn[onclick*="projects"] { color: var(--theme-proj); }
+    body[data-tab="expenses"] .nav-btn[onclick*="expenses"] { color: var(--theme-exp); }
+    body[data-tab="reports"] .nav-btn[onclick*="reports"] { color: var(--theme-rep); }
+    body[data-tab="settings"] .nav-btn[onclick*="settings"] { color: var(--theme-set); }
+
+    .container { padding: 16px; max-width: 650px; margin: 0 auto; }
+    .page { display: none; }
+    .page.active { display: block; animation: pageSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes pageSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 18px; margin-bottom: 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 16px; }
+    h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .metric-box { padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); }
+    .metric-title { font-size: 0.75rem; color: var(--subtext); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+    .metric-value { font-size: 1.25rem; font-weight: 800; margin-top: 4px; }
+
+    .progress-bar-bg { background: rgba(255,255,255,0.1); height: 10px; border-radius: 99px; overflow: hidden; margin-top: 10px; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #d946ef, #8b5cf6); border-radius: 99px; transition: width 0.4s ease, background 0.3s ease; }
+
+    .badge-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; color: #ffffff !important; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+    .badge-danger  { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; color: #ffffff !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+    .progress-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important; box-shadow: 0 0 12px rgba(245, 158, 11, 0.6) !important; }
+    .progress-danger  { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%) !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important; }
+
+    .alert-banner { padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; animation: pageSlideIn 0.3s ease-out; }
+    .alert-banner-warning { background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; color: #fbbf24; }
+    .alert-banner-danger  { background: rgba(239, 68, 68, 0.15);  border: 1.5px solid #ef4444; color: #f87171; }
+
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--subtext); margin-bottom: 6px; }
+    input, select, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+    input:focus, select:focus { border-color: var(--theme-dash); }
+
+    .btn { width: 100%; padding: 13px; border-radius: 12px; border: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: transform 0.1s, opacity 0.2s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-dash { background: linear-gradient(135deg, #d946ef, #c026d3); color: white; }
+    .btn-proj { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
+    .btn-exp  { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+    .btn-rep  { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-small { padding: 6px 12px; font-size: 0.75rem; border-radius: 8px; width: auto; }
+
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--card-border); }
+    .item-row:last-child { border-bottom: none; }
+    .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    .badge-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .badge-planning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .badge-completed { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .cat-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); color: var(--subtext); }
+
+    .btn-group { display: flex; gap: 6px; }
+    .item-link { font-size: 0.75rem; color: var(--theme-proj); text-decoration: none; display: inline-block; margin-top: 4px; font-weight: 600; cursor: pointer; }
+
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; backdrop-filter: blur(10px); justify-content: center; align-items: center; padding: 20px; }
+    .modal-content { max-width: 100%; max-height: 80vh; border-radius: 12px; object-fit: contain; }
   </style>
 </head>
+<body data-tab="dashboard">
 
-<body class="font-sans antialiased text-slate-900 pb-20 md:pb-0">
-
-  <!-- TOP HEADER -->
-  <header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-slate-950 text-white shadow-xl border-b border-slate-800">
-    <div class="flex items-center gap-3">
-      <img src="logo.svg" alt="My BuildTrack Logo" class="h-10 w-10 object-contain rounded-full bg-white p-0.5 border border-slate-700" />
-      <h1 class="text-xl font-black tracking-tight text-white">
-        My Build<span class="text-yellow-400">Track</span>
-      </h1>
+  <header>
+    <div class="brand">
+      <img src="logo.png" alt="My BuildTrack Logo">
+      <div class="brand-title">My BuildTrack</div>
     </div>
-    <button onclick="switchTab('projects')" class="bg-yellow-400 text-slate-950 font-bold px-4 py-1.5 rounded-full text-sm hover:bg-yellow-300 transition shadow-sm">
-      + New Project
-    </button>
+    <button onclick="toggleDarkMode()" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🌓</button>
   </header>
 
-  <!-- NAVIGATION TABS BAR (Desktop Header / Mobile Bottom Sticky Bar) -->
-  <nav class="bg-slate-900 text-slate-400 border-b border-slate-800 sticky top-[61px] z-40 hidden md:block">
-    <div class="max-w-7xl mx-auto flex gap-8 px-6">
-      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active py-3 font-semibold text-sm transition">Dashboard</button>
-      <button onclick="switchTab('projects')" id="nav-projects" class="nav-btn py-3 font-semibold text-sm transition">Projects</button>
-      <button onclick="switchTab('receipts')" id="nav-receipts" class="nav-btn py-3 font-semibold text-sm transition">Receipts & OCR</button>
-      <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-btn py-3 font-semibold text-sm transition">Analytics</button>
-      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn py-3 font-semibold text-sm transition">Settings</button>
+  <div class="container">
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="page active">
+      <h1>📊 Dashboard</h1>
+      <div id="dash-alert-container"></div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="metric-title">Overall Budget Used</div>
+          <div id="dash-progress-text" style="font-weight:800; font-size:0.9rem; color:var(--theme-dash);">0%</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div id="dash-progress-bar" class="progress-bar-fill" style="width:0%;"></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="metric-box">
+          <div class="metric-title">Total Budget</div>
+          <div class="metric-value" id="dash-budget">$0.00</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-title">Total Spent</div>
+          <div class="metric-value" id="dash-spent" style="color:var(--theme-dash);">$0.00</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="metric-title">Remaining Funds</div>
+        <div class="metric-value" id="dash-remaining" style="color:#10b981; font-size:1.6rem; margin-top:4px;">$0.00</div>
+      </div>
+
+      <div class="card">
+        <h2>Recent Expenses</h2>
+        <div id="dash-recent-list"></div>
+      </div>
     </div>
-  </nav>
 
-  <!-- MAIN MULTI-PAGE CONTAINER -->
-  <main class="max-w-7xl mx-auto p-4 md:p-8">
-
-    <!-- TAB 1: DASHBOARD / HOME -->
-    <section id="tab-dashboard" class="tab-content active space-y-6">
-      <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-md border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 class="text-2xl font-bold">Welcome back to My BuildTrack</h2>
-          <p class="text-slate-400 text-sm mt-1">Track job site costs, scan receipts, and manage project progress offline.</p>
-        </div>
-        <div class="flex gap-3">
-          <button onclick="switchTab('receipts')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition">Scan Receipt</button>
-          <button onclick="switchTab('projects')" class="bg-yellow-400 hover:bg-yellow-300 text-slate-950 px-4 py-2 rounded-xl text-sm font-bold transition">View Projects</button>
-        </div>
-      </div>
-
-      <!-- Quick Stats Overview Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <p class="text-xs font-semibold text-slate-500 uppercase">Active Projects</p>
-          <p id="dash-active-count" class="text-3xl font-extrabold text-slate-900 mt-1">0</p>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <p class="text-xs font-semibold text-slate-500 uppercase">Total Expenses</p>
-          <p id="dash-total-expenses" class="text-3xl font-extrabold text-slate-900 mt-1">$0.00</p>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <p class="text-xs font-semibold text-slate-500 uppercase">Receipts Scanned</p>
-          <p id="dash-receipt-count" class="text-3xl font-extrabold text-slate-900 mt-1">0</p>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <p class="text-xs font-semibold text-slate-500 uppercase">PWA Storage Mode</p>
-          <p class="text-3xl font-extrabold text-emerald-600 mt-1">IndexedDB</p>
-        </div>
-      </div>
-
-      <!-- Quick Recent Activity Section -->
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <h3 class="text-lg font-bold text-slate-900 mb-4">Recent Project Activity</h3>
-        <div id="recent-activity-list" class="space-y-3 text-sm text-slate-600">
-          <p class="italic text-slate-400">No recent project activity logged yet.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: PROJECTS MANAGEMENT -->
-    <section id="tab-projects" class="tab-content space-y-6">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 class="text-2xl font-bold text-slate-900">Projects Directory</h2>
-          <p class="text-slate-500 text-sm">Manage construction jobs, materials, and hardware tracking.</p>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">Export Excel</button>
-          <button onclick="exportToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">Export PDF</button>
-        </div>
-      </div>
-
-      <!-- Add New Project Form -->
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <h3 class="text-md font-bold text-slate-800">Add New Project</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <input type="text" id="proj-name-input" placeholder="Project Title (e.g. Site #42 Build)" class="p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-yellow-400 outline-none">
-          <input type="number" id="proj-budget-input" placeholder="Budget ($)" class="p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-yellow-400 outline-none">
-          <button onclick="addNewProject()" class="bg-slate-950 text-white font-bold px-4 py-2.5 rounded-xl text-sm hover:bg-slate-800 transition">Create Job Entry</button>
-        </div>
-      </div>
-
-      <!-- Project List Container -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="pdf-export-area">
-        <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-sm text-slate-700 flex justify-between">
-          <span>Active Construction Jobs</span>
-          <span>IndexedDB Persistence</span>
-        </div>
-        <div id="projects-container" class="divide-y divide-slate-100 p-4">
-          <p class="text-slate-400 text-center py-8 text-sm">No active projects found. Add one above to get started.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 3: RECEIPTS & OCR SCANNER -->
-    <section id="tab-receipts" class="tab-content space-y-6">
-      <div>
-        <h2 class="text-2xl font-bold text-slate-900">Receipt Scanner & Expense Logging</h2>
-        <p class="text-slate-500 text-sm">Scan physical hardware receipts with Tesseract.js OCR to log costs automatically.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- OCR Upload Card -->
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <h3 class="text-md font-bold text-slate-800">Scan Hardware / Material Receipt</h3>
-          <div class="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center space-y-3">
-            <input type="file" id="ocr-file-input" accept="image/*" class="text-xs text-slate-500 block w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-yellow-100 file:text-yellow-700 hover:file:bg-yellow-200">
-            <button onclick="processReceiptOCR()" id="ocr-btn" class="bg-slate-950 text-white font-bold w-full py-2.5 rounded-xl text-sm hover:bg-slate-800 transition disabled:opacity-50" disabled>
-              Extract Receipt Data
-            </button>
-            <p id="ocr-status" class="text-xs font-semibold text-slate-600 mt-2"></p>
+    <!-- PROJECTS PAGE -->
+    <div id="page-projects" class="page">
+      <h1>📁 Projects</h1>
+      <div class="card">
+        <h2 id="proj-form-title">Add Project</h2>
+        <form id="project-form">
+          <input type="hidden" id="proj-id">
+          <div class="form-group">
+            <label>Project Title</label>
+            <input type="text" id="proj-title" placeholder="e.g. Main Site Construction" required>
           </div>
-        </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Status</label>
+              <select id="proj-status">
+                <option value="Planning">Planning</option>
+                <option value="Active">Active</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Budget ($ AUD)</label>
+              <input type="number" id="proj-budget" step="0.01" placeholder="5000" required>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" id="proj-start" required>
+            </div>
+            <div class="form-group">
+              <label>Target Date</label>
+              <input type="date" id="proj-target" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-proj" style="margin-top:6px;">Save Project</button>
+          <button type="button" id="proj-cancel-btn" class="btn btn-small" style="display:none; margin:10px auto 0 auto; background:transparent; color:var(--subtext);" onclick="resetProjectForm()">Cancel Editing</button>
+        </form>
+      </div>
 
-        <!-- Manual Expense Logging Form -->
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-          <h3 class="text-md font-bold text-slate-800">Manual Expense Log</h3>
-          <select id="exp-project-select" class="w-full p-2.5 border rounded-xl text-sm outline-none">
-            <option value="">Select Target Project</option>
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h2>Project Directory</h2>
+          <select id="proj-status-filter" style="width:auto; padding:6px 10px; font-size:0.8rem;" onchange="render()">
+            <option value="All">All Statuses</option>
+            <option value="Planning">Planning</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
           </select>
-          <input type="text" id="exp-desc-input" placeholder="Expense Item (e.g., Timber, Nails)" class="w-full p-2.5 border rounded-xl text-sm outline-none">
-          <input type="number" id="exp-amount-input" placeholder="Amount ($)" class="w-full p-2.5 border rounded-xl text-sm outline-none">
-          <button onclick="logManualExpense()" class="bg-yellow-400 text-slate-950 font-bold w-full py-2.5 rounded-xl text-sm hover:bg-yellow-300 transition">Save Expense Log</button>
         </div>
+        <div id="projects-list"></div>
       </div>
-    </section>
+    </div>
 
-    <!-- TAB 4: ANALYTICS & CHARTS -->
-    <section id="tab-analytics" class="tab-content space-y-6">
-      <div>
-        <h2 class="text-2xl font-bold text-slate-900">Analytics & Budget Reporting</h2>
-        <p class="text-slate-500 text-sm">Visual break-down of material costs and project expenditure.</p>
+    <!-- EXPENSES PAGE -->
+    <div id="page-expenses" class="page">
+      <h1>💸 Expenses</h1>
+      <div class="card">
+        <h2 id="exp-form-title">Add Expense Item</h2>
+        <form id="expense-form">
+          <input type="hidden" id="exp-id">
+          <div class="form-group">
+            <label>Assigned Project</label>
+            <select id="exp-project-id" required></select>
+          </div>
+          <div class="form-group">
+            <label>Item Description</label>
+            <input type="text" id="exp-desc" placeholder="e.g. Timber & Hardware Supplies" required>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Category</label>
+              <select id="exp-category">
+                <option value="Materials">Materials</option>
+                <option value="Hardware">Hardware</option>
+                <option value="Tools">Tools</option>
+                <option value="Labour">Labour</option>
+                <option value="Miscellaneous">Miscellaneous</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quantity</label>
+              <input type="number" id="exp-qty" value="1" min="1" required>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Unit Cost ($ AUD)</label>
+              <input type="number" id="exp-unit-cost" step="0.01" placeholder="150.00" required>
+            </div>
+            <div class="form-group">
+              <label>Units Dropdown / Type</label>
+              <select id="exp-units-type">
+                <option value="Pcs">Pcs / Units</option>
+                <option value="Hrs">Hours</option>
+                <option value="Kg">Kg</option>
+                <option value="Meters">Meters</option>
+                <option value="Sets">Sets</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Purchase Link (Optional)</label>
+            <input type="url" id="exp-url" placeholder="https://supplier.com/item">
+          </div>
+          <div class="form-group">
+            <label>Attach Receipt Image (Optional)</label>
+            <input type="file" id="exp-receipt-input" accept="image/*" capture="environment">
+            <input type="hidden" id="exp-receipt-data">
+            <div id="receipt-preview-status" style="font-size:0.75rem; color:#10b981; margin-top:4px; font-weight:600;"></div>
+          </div>
+          <button type="submit" class="btn btn-exp" style="margin-top:6px;">Add Expense Item</button>
+          <button type="button" id="exp-cancel-btn" class="btn btn-small" style="display:none; margin:10px auto 0 auto; background:transparent; color:var(--subtext);" onclick="resetExpenseForm()">Cancel Editing</button>
+        </form>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 class="text-md font-bold text-slate-800 mb-4">Expenses Category Distribution</h3>
-          <div class="h-64 relative">
-            <canvas id="analyticsDoughnutChart"></canvas>
-          </div>
+      <div class="card">
+        <h2>Expense Log</h2>
+        <div class="grid-2" style="margin-bottom:12px;">
+          <select id="expense-cat-filter" onchange="render()">
+            <option value="All">All Categories</option>
+            <option value="Materials">Materials</option>
+            <option value="Hardware">Hardware</option>
+            <option value="Tools">Tools</option>
+            <option value="Labour">Labour</option>
+            <option value="Miscellaneous">Miscellaneous</option>
+          </select>
+          <input type="text" id="expense-search" placeholder="🔍 Search..." oninput="render()">
         </div>
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 class="text-md font-bold text-slate-800 mb-4">Project Cost vs Budget</h3>
-          <div class="h-64 relative">
-            <canvas id="analyticsBarChart"></canvas>
-          </div>
-        </div>
+        <div id="category-summary" style="font-size:0.8rem; color:var(--subtext); margin-bottom:10px; font-weight:600;"></div>
+        <div id="expenses-list"></div>
       </div>
-    </section>
+    </div>
 
-    <!-- TAB 5: SETTINGS -->
-    <section id="tab-settings" class="tab-content space-y-6">
-      <div>
-        <h2 class="text-2xl font-bold text-slate-900">App Settings & Info</h2>
-        <p class="text-slate-500 text-sm">Manage local database storage, offline cache, and application preferences.</p>
+    <!-- REPORTS PAGE -->
+    <div id="page-reports" class="page">
+      <h1>📄 Export Reports</h1>
+      <div class="card">
+        <h2>Generate Summary</h2>
+        <div class="form-group">
+          <label>Select Project</label>
+          <select id="pdf-project-select"></select>
+        </div>
+        <div class="form-group">
+          <label>File Format</label>
+          <select id="report-format-select">
+            <option value="PDF">PDF Document (.pdf)</option>
+            <option value="EXCEL">Excel Spreadsheet (.xlsx)</option>
+          </select>
+        </div>
+        <button class="btn btn-rep" onclick="downloadReport()">📥 Share / Export Report</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" class="page">
+      <h1>⚙️ Settings</h1>
+      <div class="card">
+        <h2>App Version & Status</h2>
+        <p style="font-size:0.85rem; color:var(--subtext);">Version: <strong id="app-version-tag">v2.2.0</strong></p>
+        <p id="update-msg" style="font-size:0.8rem; margin-top:6px; color:var(--subtext);"></p>
+        <button id="update-btn" class="btn btn-small" style="margin-top:10px; background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);" onclick="checkForAppUpdate()">Check for App Updates</button>
       </div>
 
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 max-w-xl">
-        <div class="flex items-center justify-between border-b pb-3">
-          <div>
-            <p class="font-bold text-sm text-slate-800">App Name</p>
-            <p class="text-xs text-slate-500">Registered PWA Title</p>
-          </div>
-          <span class="text-sm font-bold text-slate-900">My BuildTrack</span>
-        </div>
-        <div class="flex items-center justify-between border-b pb-3">
-          <div>
-            <p class="font-bold text-sm text-slate-800">Storage Engine</p>
-            <p class="text-xs text-slate-500">Browser persistent storage</p>
-          </div>
-          <span class="text-sm font-bold text-emerald-600">IndexedDB Active</span>
-        </div>
-        <div class="flex items-center justify-between border-b pb-3">
-          <div>
-            <p class="font-bold text-sm text-slate-800">Clear Storage Cache</p>
-            <p class="text-xs text-slate-500">Reset local IndexedDB data</p>
-          </div>
-          <button onclick="clearAppData()" class="bg-rose-100 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-rose-200 transition">Reset Database</button>
-        </div>
+      <div class="card">
+        <h2>Data Management</h2>
+        <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; margin-bottom:8px;" onclick="manualSave()">💾 Force Manual Save</button>
+        <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; margin-bottom:8px;" onclick="exportData()">📤 Export Backup JSON</button>
+        <label class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); width:100%; text-align:center; cursor:pointer;">
+          📥 Import Backup JSON
+          <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+        </label>
+        <p id="last-saved-time" style="font-size:0.75rem; color:var(--subtext); margin-top:8px; text-align:center;"></p>
       </div>
-    </section>
-
-  </main>
-
-  <!-- MOBILE BOTTOM FIXED NAVIGATION BAR -->
-  <div class="fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 flex justify-around py-2.5 px-2 md:hidden z-50 text-xs text-slate-400">
-    <button onclick="switchTab('dashboard')" class="flex flex-col items-center gap-1 active:text-yellow-400">
-      <span>Dashboard</span>
-    </button>
-    <button onclick="switchTab('projects')" class="flex flex-col items-center gap-1 active:text-yellow-400">
-      <span>Projects</span>
-    </button>
-    <button onclick="switchTab('receipts')" class="flex flex-col items-center gap-1 active:text-yellow-400">
-      <span>Receipts</span>
-    </button>
-    <button onclick="switchTab('analytics')" class="flex flex-col items-center gap-1 active:text-yellow-400">
-      <span>Analytics</span>
-    </button>
-    <button onclick="switchTab('settings')" class="flex flex-col items-center gap-1 active:text-yellow-400">
-      <span>Settings</span>
-    </button>
+    </div>
   </div>
 
-  <!-- JAVASCRIPT: APPLICATION LOGIC -->
-  <script>
-    let db;
-    let chartInstanceDoughnut;
-    let chartInstanceBar;
-
-    // INITIALIZATION
-    document.addEventListener('DOMContentLoaded', () => {
-      initIndexedDB();
-      initCharts();
+  <!-- Hidden Printable PDF Container -->
+  <div id="pdf-wrapper" style="display:none; position:absolute; left:-9999px; top:-9999px;">
+    <div id="pdf-page-element" style="width:210mm; padding:15mm; background:#fff; color:#000; font-family:Arial, sans-serif;">
+      <h1 id="pdf-title" style="color:#0b2b18; border-bottom:2px solid #dda835; padding-bottom:5px; margin-bottom:5px;"></h1>
+      <p id="pdf-meta" style="font-size:12px; color:#555; margin-bottom:15px;"></p>
       
-      document.getElementById('ocr-file-input').addEventListener('change', (e) => {
-        document.getElementById('ocr-btn').disabled = !e.target.files.length;
+      <div style="display:flex; justify-content:space-between; background:#f4f4f4; padding:10px; border-radius:5px; margin-bottom:15px;">
+        <div><strong>Total Budget:</strong> <span id="pdf-budget"></span></div>
+        <div><strong>Total Expenses:</strong> <span id="pdf-spent"></span></div>
+      </div>
+
+      <h3 id="pdf-table-heading" style="margin-bottom:8px;">Itemized Expense Report</h3>
+      <table style="width:100%; border-collapse:collapse; font-size:11px;">
+        <thead>
+          <tr style="background:#0b2b18; color:#dda835; text-align:left;">
+            <th style="padding:6px; border:1px solid #ddd;">Description</th>
+            <th style="padding:6px; border:1px solid #ddd;">Category</th>
+            <th style="padding:6px; border:1px solid #ddd;">Qty</th>
+            <th style="padding:6px; border:1px solid #ddd;">Unit Cost</th>
+            <th style="padding:6px; border:1px solid #ddd;">Total Cost</th>
+          </tr>
+        </thead>
+        <tbody id="pdf-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Receipt Image Modal -->
+  <div id="receipt-modal" class="modal" onclick="closeReceiptModal()">
+    <img id="modal-receipt-img" class="modal-content" src="" alt="Receipt Preview">
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="nav-bar">
+    <button class="nav-btn active" onclick="switchTab('dashboard', this)"><span class="icon">📊</span>Dashboard</button>
+    <button class="nav-btn" onclick="switchTab('projects', this)"><span class="icon">📁</span>Projects</button>
+    <button class="nav-btn" onclick="switchTab('expenses', this)"><span class="icon">💸</span>Expenses</button>
+    <button class="nav-btn" onclick="switchTab('reports', this)"><span class="icon">📄</span>Reports</button>
+    <button class="nav-btn" onclick="switchTab('settings', this)"><span class="icon">⚙️</span>Settings</button>
+  </nav>
+
+  <script>
+    const APP_VERSION = "v2.2.0";
+    let db;
+    let data = { projects: [], expenses: [], settings: { darkMode: true } };
+    let newWorker = null;
+
+    function triggerHaptic(type = 'medium') {
+      if (!('vibrate' in navigator)) return;
+      switch (type) {
+        case 'light': navigator.vibrate(10); break;
+        case 'selection': navigator.vibrate([12, 20, 12]); break;
+        case 'medium': navigator.vibrate(25); break;
+        case 'heavy': navigator.vibrate([40, 30, 40]); break;
+        case 'delete': navigator.vibrate([40, 50, 40, 50, 60]); break;
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+          newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              const updateBtn = document.getElementById('update-btn');
+              updateBtn.textContent = '🚀 Update Available! Tap to Apply';
+              updateBtn.classList.add('btn-dash');
+              document.getElementById('update-msg').textContent = 'A new version of My BuildTrack is ready.';
+              triggerHaptic('heavy');
+            }
+          });
+        });
+      }).catch(() => {});
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          window.location.reload();
+          refreshing = true;
+        }
       });
-    });
-
-    // 1. TAB SWITCHING LOGIC
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-
-      const targetTab = document.getElementById(`tab-${tabId}`);
-      if (targetTab) targetTab.classList.add('active');
-
-      const targetNav = document.getElementById(`nav-${tabId}`);
-      if (targetNav) targetNav.classList.add('active');
     }
 
-    // 2. INDEXEDDB SETUP
-    function initIndexedDB() {
-      const request = indexedDB.open('MyBuildTrackDB', 1);
-
-      request.onupgradeneeded = (e) => {
-        db = e.target.result;
-        if (!db.objectStoreNames.contains('projects')) {
-          db.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
-        }
-        if (!db.objectStoreNames.contains('expenses')) {
-          db.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true });
-        }
-      };
-
-      request.onsuccess = (e) => {
-        db = e.target.result;
-        refreshUI();
-      };
-
-      request.onerror = (e) => {
-        console.error("IndexedDB initialization error:", e.target.error);
-      };
-    }
-
-    // 3. UI REFRESH
-    function refreshUI() {
-      if (!db) return;
-      const tx = db.transaction(['projects', 'expenses'], 'readonly');
-      const projStore = tx.objectStore('projects');
-      const expStore = tx.objectStore('expenses');
-
-      projStore.getAll().onsuccess = (e) => {
-        const projects = e.target.result || [];
-        renderProjects(projects);
-        updateProjectSelect(projects);
-        document.getElementById('dash-active-count').innerText = projects.length;
-      };
-
-      expStore.getAll().onsuccess = (e) => {
-        const expenses = e.target.result || [];
-        const total = expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-        document.getElementById('dash-total-expenses').innerText = `$${total.toFixed(2)}`;
-        document.getElementById('dash-receipt-count').innerText = expenses.length;
-      };
-    }
-
-    function renderProjects(projects) {
-      const container = document.getElementById('projects-container');
-      if (!projects.length) {
-        container.innerHTML = `<p class="text-slate-400 text-center py-8 text-sm">No active projects found. Add one above to get started.</p>`;
-        return;
+    function checkForAppUpdate() {
+      const msg = document.getElementById('update-msg');
+      if (newWorker) {
+        newWorker.postMessage({ action: 'skipWaiting' });
+      } else if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg) {
+            msg.textContent = "Checking for latest version...";
+            reg.update().catch(() => {});
+            setTimeout(() => {
+              if (!newWorker && msg.textContent.includes("Checking")) {
+                msg.textContent = "✓ You are using the latest version!";
+              }
+            }, 2000);
+          }
+        });
       }
-
-      container.innerHTML = projects.map(p => `
-        <div class="py-3 flex justify-between items-center text-sm">
-          <div>
-            <p class="font-bold text-slate-900">${p.name}</p>
-            <p class="text-xs text-slate-500">Budget: $${parseFloat(p.budget).toFixed(2)}</p>
-          </div>
-          <span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold">Active</span>
-        </div>
-      `).join('');
     }
 
-    function updateProjectSelect(projects) {
-      const select = document.getElementById('exp-project-select');
-      select.innerHTML = `<option value="">Select Target Project</option>` + 
-        projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-    }
-
-    // 4. ADD PROJECT
-    function addNewProject() {
-      const name = document.getElementById('proj-name-input').value.trim();
-      const budget = document.getElementById('proj-budget-input').value;
-
-      if (!name || !budget) {
-        alert("Please specify project name and budget.");
-        return;
-      }
-
-      const tx = db.transaction('projects', 'readwrite');
-      tx.objectStore('projects').add({ name, budget: parseFloat(budget), date: new Date().toISOString() });
-      tx.oncomplete = () => {
-        document.getElementById('proj-name-input').value = '';
-        document.getElementById('proj-budget-input').value = '';
-        refreshUI();
-      };
-    }
-
-    // 5. MANUAL EXPENSE LOG
-    function logManualExpense() {
-      const projectId = document.getElementById('exp-project-select').value;
-      const desc = document.getElementById('exp-desc-input').value.trim();
-      const amount = document.getElementById('exp-amount-input').value;
-
-      if (!projectId || !desc || !amount) {
-        alert("Please fill in project, description, and expense amount.");
-        return;
-      }
-
-      const tx = db.transaction('expenses', 'readwrite');
-      tx.objectStore('expenses').add({ projectId, desc, amount: parseFloat(amount), date: new Date().toISOString() });
-      tx.oncomplete = () => {
-        document.getElementById('exp-desc-input').value = '';
-        document.getElementById('exp-amount-input').value = '';
-        refreshUI();
-        alert("Expense recorded successfully!");
-      };
-    }
-
-    // 6. OCR SCANNER INTEGRATION
-    function processReceiptOCR() {
-      const fileInput = document.getElementById('ocr-file-input');
-      const file = fileInput.files[0];
+    document.getElementById('exp-receipt-input').addEventListener('change', function(e) {
+      const file = e.target.files[0];
       if (!file) return;
 
-      const status = document.getElementById('ocr-status');
-      status.innerText = "Processing image with Tesseract OCR...";
+      const originalSizeKb = (file.size / 1024).toFixed(1);
+      const reader = new FileReader();
 
-      Tesseract.recognize(file, 'eng', { logger: m => status.innerText = `Reading text: ${Math.round(m.progress * 100)}%` })
-        .then(({ data: { text } }) => {
-          status.innerText = "Scan complete!";
-          alert("OCR Extract Complete. Check console for text parsing.");
-          console.log("OCR Result Text:", text);
-        })
-        .catch(err => {
-          console.error(err);
-          status.innerText = "Failed to scan receipt image.";
-        });
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const MAX_WIDTH = 1000;
+          const MAX_HEIGHT = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+          } else {
+            if (height > MAX_HEIGHT) { width = Math.round((width * MAX_HEIGHT) / height); height = MAX_HEIGHT; }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          const compressedSizeKb = (compressedBase64.length * (3 / 4) / 1024).toFixed(1);
+
+          document.getElementById('exp-receipt-data').value = compressedBase64;
+          document.getElementById('receipt-preview-status').textContent = `✓ Compressed (${originalSizeKb} KB → ${compressedSizeKb} KB)`;
+          triggerHaptic('heavy');
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function initStorage() {
+      const saved = localStorage.getItem('my_buildtrack_tracker_data') || localStorage.getItem('dhiya_temples_tracker_data');
+      if (saved) {
+        try { data = JSON.parse(saved); } catch(e) {}
+      }
+      const request = indexedDB.open('MyBuildTrackDB', 1);
+      request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains('store')) db.createObjectStore('store');
+      };
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        loadDB();
+      };
+      render();
     }
 
-    // 7. CHARTS INITIALIZATION
-    function initCharts() {
-      const ctxDoughnut = document.getElementById('analyticsDoughnutChart').getContext('2d');
-      chartInstanceDoughnut = new Chart(ctxDoughnut, {
-        type: 'doughnut',
-        data: {
-          labels: ['Materials', 'Hardware', 'Tools', 'Subcontractors'],
-          datasets: [{ data: [40, 25, 20, 15], backgroundColor: ['#EAB308', '#3B82F6', '#EF4444', '#10B981'] }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-
-      const ctxBar = document.getElementById('analyticsBarChart').getContext('2d');
-      chartInstanceBar = new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-          labels: ['Site #1', 'Site #2', 'Site #3'],
-          datasets: [
-            { label: 'Budget', data: [12000, 15000, 8000], backgroundColor: '#CBD5E1' },
-            { label: 'Spent', data: [9400, 11200, 7800], backgroundColor: '#EAB308' }
-          ]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
+    function loadDB() {
+      if (!db) return;
+      const tx = db.transaction('store', 'readonly');
+      const req = tx.objectStore('store').get('app_data');
+      req.onsuccess = () => {
+        if (req.result) { data = req.result; render(); }
+      };
     }
 
-    // 8. EXPORTS
-    function exportToPDF() {
-      const element = document.getElementById('pdf-export-area');
-      html2pdf().from(element).save('MyBuildTrack_Projects.pdf');
+    function autoSave() {
+      localStorage.setItem('my_buildtrack_tracker_data', JSON.stringify(data));
+      if (db) {
+        const tx = db.transaction('store', 'readwrite');
+        tx.objectStore('store').put(data, 'app_data');
+      }
+      document.getElementById('last-saved-time').textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+      render();
     }
 
-    function exportToExcel() {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet([{ App: 'My BuildTrack', Status: 'Active' }]);
-      XLSX.utils.book_append_sheet(wb, ws, "Projects");
-      XLSX.writeFile(wb, 'MyBuildTrack_Export.xlsx');
+    function manualSave() { autoSave(); alert('Data saved successfully!'); }
+    function formatAUD(amount) { return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(amount || 0); }
+
+    function switchTab(tabId, el) {
+      triggerHaptic('selection');
+      document.body.setAttribute('data-tab', tabId);
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`page-${tabId}`).classList.add('active');
+      if (el) el.classList.add('active');
+      render();
     }
 
-    function clearAppData() {
-      if (confirm("Reset local IndexedDB storage?")) {
-        indexedDB.deleteDatabase('MyBuildTrackDB');
-        location.reload();
+    function toggleDarkMode() {
+      data.settings.darkMode = !data.settings.darkMode;
+      applyTheme();
+      autoSave();
+    }
+
+    function applyTheme() {
+      document.documentElement.setAttribute('data-theme', data.settings.darkMode ? 'dark' : 'light');
+    }
+
+    document.getElementById('project-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('proj-id').value;
+      const title = document.getElementById('proj-title').value;
+      const status = document.getElementById('proj-status').value;
+      const start = document.getElementById('proj-start').value;
+      const target = document.getElementById('proj-target').value;
+      const budget = parseFloat(document.getElementById('proj-budget').value);
+
+      if (id) {
+        const proj = data.projects.find(p => p.id == id);
+        if (proj) Object.assign(proj, { title, status, start, target, budget });
+      } else {
+        data.projects.push({ id: Date.now(), title, status, start, target, budget });
+      }
+      resetProjectForm();
+      autoSave();
+    });
+
+    function editProject(id) {
+      triggerHaptic('medium');
+      const proj = data.projects.find(p => p.id == id);
+      if (!proj) return;
+      document.getElementById('proj-id').value = proj.id;
+      document.getElementById('proj-title').value = proj.title;
+      document.getElementById('proj-status').value = proj.status;
+      document.getElementById('proj-start').value = proj.start;
+      document.getElementById('proj-target').value = proj.target;
+      document.getElementById('proj-budget').value = proj.budget;
+      document.getElementById('proj-form-title').textContent = "Edit Project";
+      document.getElementById('proj-cancel-btn').style.display = "block";
+    }
+
+    function resetProjectForm() {
+      document.getElementById('project-form').reset();
+      document.getElementById('proj-id').value = '';
+      document.getElementById('proj-form-title').textContent = "Add Project";
+      document.getElementById('proj-cancel-btn').style.display = "none";
+    }
+
+    function deleteProject(id) {
+      triggerHaptic('delete');
+      if (confirm('Delete project and all associated expenses?')) {
+        data.projects = data.projects.filter(p => p.id != id);
+        data.expenses = data.expenses.filter(e => e.projectId != id);
+        autoSave();
       }
     }
 
-    // SERVICE WORKER REGISTRATION
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('My BuildTrack SW active scope:', reg.scope))
-          .catch(err => console.error('SW failed:', err));
-      });
+    document.getElementById('expense-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('exp-id').value;
+      const projectId = document.getElementById('exp-project-id').value;
+      const desc = document.getElementById('exp-desc').value;
+      const qty = parseInt(document.getElementById('exp-qty').value) || 1;
+      const unitCost = parseFloat(document.getElementById('exp-unit-cost').value) || 0;
+      const unitsType = document.getElementById('exp-units-type').value;
+      const url = document.getElementById('exp-url').value;
+      const category = document.getElementById('exp-category').value;
+      const receipt = document.getElementById('exp-receipt-data').value;
+      const totalCost = qty * unitCost;
+
+      if (id) {
+        const exp = data.expenses.find(x => x.id == id);
+        if (exp) Object.assign(exp, { projectId, desc, qty, unitCost, unitsType, cost: totalCost, url, category, receipt: receipt || exp.receipt });
+      } else {
+        data.expenses.unshift({ 
+          id: Date.now(), projectId, desc, qty, unitCost, unitsType, cost: totalCost, url, category, receipt, date: new Date().toISOString().split('T')[0] 
+        });
+      }
+      resetExpenseForm();
+      autoSave();
+    });
+
+    function editExpense(id) {
+      triggerHaptic('medium');
+      const exp = data.expenses.find(x => x.id == id);
+      if (!exp) return;
+      document.getElementById('exp-id').value = exp.id;
+      document.getElementById('exp-project-id').value = exp.projectId;
+      document.getElementById('exp-desc').value = exp.desc;
+      document.getElementById('exp-qty').value = exp.qty || 1;
+      document.getElementById('exp-unit-cost').value = exp.unitCost || exp.cost;
+      document.getElementById('exp-units-type').value = exp.unitsType || 'Pcs';
+      document.getElementById('exp-url').value = exp.url || '';
+      document.getElementById('exp-category').value = exp.category;
+      document.getElementById('exp-receipt-data').value = exp.receipt || '';
+      document.getElementById('receipt-preview-status').textContent = exp.receipt ? '✓ Receipt Attached' : '';
+      document.getElementById('exp-form-title').textContent = "Edit Expense Item";
+      document.getElementById('exp-cancel-btn').style.display = "block";
     }
+
+    function resetExpenseForm() {
+      document.getElementById('expense-form').reset();
+      document.getElementById('exp-id').value = '';
+      document.getElementById('exp-qty').value = '1';
+      document.getElementById('exp-receipt-data').value = '';
+      document.getElementById('receipt-preview-status').textContent = '';
+      document.getElementById('exp-form-title').textContent = "Add Expense Item";
+      document.getElementById('exp-cancel-btn').style.display = "none";
+    }
+
+    function deleteExpense(id) {
+      triggerHaptic('delete');
+      if (confirm('Delete this expense?')) {
+        data.expenses = data.expenses.filter(x => x.id != id);
+        autoSave();
+      }
+    }
+
+    function openReceiptModal(src) {
+      triggerHaptic('light');
+      document.getElementById('modal-receipt-img').src = src;
+      document.getElementById('receipt-modal').style.display = 'flex';
+    }
+
+    function closeReceiptModal() {
+      document.getElementById('receipt-modal').style.display = 'none';
+    }
+
+    function render() {
+      applyTheme();
+
+      // Calculated values
+      const totalBudget = data.projects.reduce((acc, p) => acc + (parseFloat(p.budget) || 0), 0);
+      const totalSpent = data.expenses.reduce((acc, e) => acc + (parseFloat(e.cost) || 0), 0);
+      const remaining = totalBudget - totalSpent;
+      const usagePct = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0;
+
+      // Dashboard Render
+      document.getElementById('dash-budget').textContent = formatAUD(totalBudget);
+      document.getElementById('dash-spent').textContent = formatAUD(totalSpent);
+      document.getElementById('dash-remaining').textContent = formatAUD(remaining);
+      document.getElementById('dash-progress-text').textContent = `${usagePct}%`;
+
+      const progressBar = document.getElementById('dash-progress-bar');
+      progressBar.style.width = `${usagePct}%`;
+
+      // Warning & Alert Styles
+      const alertContainer = document.getElementById('dash-alert-container');
+      alertContainer.innerHTML = '';
+      progressBar.className = 'progress-bar-fill';
+
+      if (totalBudget > 0) {
+        if (totalSpent > totalBudget) {
+          progressBar.classList.add('progress-danger');
+          alertContainer.innerHTML = `<div class="alert-banner alert-banner-danger">⚠️ Budget Exceeded by ${formatAUD(totalSpent - totalBudget)}</div>`;
+        } else if (usagePct >= 85) {
+          progressBar.classList.add('progress-warning');
+          alertContainer.innerHTML = `<div class="alert-banner alert-banner-warning">⚠️ High Budget Usage (${usagePct}%)</div>`;
+        }
+      }
+
+      // Recent Expenses
+      const recentList = document.getElementById('dash-recent-list');
+      recentList.innerHTML = '';
+      if (data.expenses.length === 0) {
+        recentList.innerHTML = `<p style="color:var(--subtext); font-size:0.85rem;">No recent expenses recorded.</p>`;
+      } else {
+        data.expenses.slice(0, 5).forEach(e => {
+          const proj = data.projects.find(p => p.id == e.projectId);
+          const projName = proj ? proj.title : 'Unassigned';
+          recentList.innerHTML += `
+            <div class="item-row">
+              <div>
+                <strong style="font-size:0.9rem;">${e.desc}</strong>
+                <div style="font-size:0.75rem; color:var(--subtext); margin-top:2px;">${projName} • <span class="cat-badge">${e.category}</span></div>
+              </div>
+              <div style="font-weight:700; font-size:0.95rem; color:var(--theme-dash);">${formatAUD(e.cost)}</div>
+            </div>
+          `;
+        });
+      }
+
+      // Project Dropdown Fillers
+      const expProjSelect = document.getElementById('exp-project-id');
+      const pdfProjSelect = document.getElementById('pdf-project-select');
+      expProjSelect.innerHTML = '';
+      pdfProjSelect.innerHTML = '<option value="ALL">All Projects (Combined)</option>';
+
+      data.projects.forEach(p => {
+        expProjSelect.innerHTML += `<option value="${p.id}">${p.title}</option>`;
+        pdfProjSelect.innerHTML += `<option value="${p.id}">${p.title}</option>`;
+      });
+
+      // Projects List Render
+      const projFilter = document.getElementById('proj-status-filter').value;
+      const projList = document.getElementById('projects-list');
+      projList.innerHTML = '';
+
+      const filteredProjects = data.projects.filter(p => projFilter === 'All' || p.status === projFilter);
+      if (filteredProjects.length === 0) {
+        projList.innerHTML = `<p style="color:var(--subtext); font-size:0.85rem;">No projects found.</p>`;
+      } else {
+        filteredProjects.forEach(p => {
+          const projSpent = data.expenses.filter(e => e.projectId == p.id).reduce((acc, e) => acc + parseFloat(e.cost), 0);
+          const pPct = p.budget > 0 ? Math.min(Math.round((projSpent / p.budget) * 100), 100) : 0;
+          const badgeClass = p.status === 'Active' ? 'badge-active' : p.status === 'Planning' ? 'badge-planning' : 'badge-completed';
+
+          projList.innerHTML += `
+            <div class="item-row" style="flex-direction:column; align-items:stretch; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <strong style="font-size:1rem;">${p.title}</strong>
+                  <span class="badge ${badgeClass}" style="margin-left:6px;">${p.status}</span>
+                </div>
+                <div class="btn-group">
+                  <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);" onclick="editProject(${p.id})">✏️</button>
+                  <button class="btn btn-small btn-danger" onclick="deleteProject(${p.id})">🗑️</button>
+                </div>
+              </div>
+              <div style="font-size:0.8rem; color:var(--subtext);">
+                Dates: ${p.start || 'N/A'} to ${p.target || 'N/A'}
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:700;">
+                <span>Spent: ${formatAUD(projSpent)} / ${formatAUD(p.budget)}</span>
+                <span style="color:var(--theme-proj);">${pPct}%</span>
+              </div>
+              <div class="progress-bar-bg" style="height:6px; margin-top:2px;">
+                <div class="progress-bar-fill" style="width:${pPct}%; background:var(--theme-proj);"></div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Expenses List Render
+      const catFilter = document.getElementById('expense-cat-filter').value;
+      const searchVal = document.getElementById('expense-search').value.toLowerCase();
+      const expList = document.getElementById('expenses-list');
+      expList.innerHTML = '';
+
+      const filteredExpenses = data.expenses.filter(e => {
+        const matchesCat = catFilter === 'All' || e.category === catFilter;
+        const matchesSearch = e.desc.toLowerCase().includes(searchVal) || e.category.toLowerCase().includes(searchVal);
+        return matchesCat && matchesSearch;
+      });
+
+      const catSum = filteredExpenses.reduce((acc, e) => acc + parseFloat(e.cost), 0);
+      document.getElementById('category-summary').textContent = `Total Filtered Expenses: ${formatAUD(catSum)}`;
+
+      if (filteredExpenses.length === 0) {
+        expList.innerHTML = `<p style="color:var(--subtext); font-size:0.85rem;">No matching expenses logged.</p>`;
+      } else {
+        filteredExpenses.forEach(e => {
+          const proj = data.projects.find(p => p.id == e.projectId);
+          const projName = proj ? proj.title : 'Unassigned';
+
+          expList.innerHTML += `
+            <div class="item-row">
+              <div style="max-width:65%;">
+                <strong style="font-size:0.95rem;">${e.desc}</strong>
+                <div style="font-size:0.75rem; color:var(--subtext); margin-top:2px;">
+                  ${projName} • <span class="cat-badge">${e.category}</span>
+                </div>
+                <div style="font-size:0.75rem; color:var(--subtext);">
+                  ${e.qty || 1} ${e.unitsType || 'Pcs'} @ ${formatAUD(e.unitCost || e.cost)}
+                </div>
+                ${e.url ? `<a class="item-link" href="${e.url}" target="_blank">🔗 Product Link</a>` : ''}
+                ${e.receipt ? `<span class="item-link" style="margin-left:8px;" onclick="openReceiptModal('${e.receipt}')">🖼️ View Receipt</span>` : ''}
+              </div>
+              <div style="text-align:right;">
+                <div style="font-weight:800; font-size:1rem; color:var(--theme-exp);">${formatAUD(e.cost)}</div>
+                <div class="btn-group" style="margin-top:6px; justify-content:flex-end;">
+                  <button class="btn btn-small" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text);" onclick="editExpense(${e.id})">✏️</button>
+                  <button class="btn btn-small btn-danger" onclick="deleteExpense(${e.id})">🗑️</button>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+
+    function downloadReport() {
+      triggerHaptic('heavy');
+      const projId = document.getElementById('pdf-project-select').value;
+      const format = document.getElementById('report-format-select').value;
+
+      let reportProjects = projId === 'ALL' ? data.projects : data.projects.filter(p => p.id == projId);
+      let reportExpenses = projId === 'ALL' ? data.expenses : data.expenses.filter(e => e.projectId == projId);
+
+      const titleText = projId === 'ALL' ? 'My BuildTrack - Master Summary' : (reportProjects[0] ? reportProjects[0].title : 'Project Report');
+      const calcBudget = reportProjects.reduce((acc, p) => acc + parseFloat(p.budget || 0), 0);
+      const calcSpent = reportExpenses.reduce((acc, e) => acc + parseFloat(e.cost || 0), 0);
+
+      if (format === 'EXCEL') {
+        const sheetData = reportExpenses.map(e => {
+          const proj = data.projects.find(p => p.id == e.projectId);
+          return {
+            'Project': proj ? proj.title : 'Unassigned',
+            'Description': e.desc,
+            'Category': e.category,
+            'Quantity': e.qty || 1,
+            'Unit Type': e.unitsType || 'Pcs',
+            'Unit Cost ($)': e.unitCost || e.cost,
+            'Total Cost ($)': e.cost,
+            'Date': e.date || ''
+          };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(sheetData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+        XLSX.writeFile(workbook, `${titleText.replace(/[^a-zA-Z0-9]/g, '_')}_Report.xlsx`);
+      } else {
+        document.getElementById('pdf-title').textContent = titleText;
+        document.getElementById('pdf-meta').textContent = `Generated on ${new Date().toLocaleDateString()} • My BuildTrack`;
+        document.getElementById('pdf-budget').textContent = formatAUD(calcBudget);
+        document.getElementById('pdf-spent').textContent = formatAUD(calcSpent);
+
+        const tbody = document.getElementById('pdf-table-body');
+        tbody.innerHTML = '';
+
+        reportExpenses.forEach(e => {
+          tbody.innerHTML += `
+            <tr>
+              <td style="padding:6px; border:1px solid #ddd;">${e.desc}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${e.category}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${e.qty || 1} ${e.unitsType || 'Pcs'}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${formatAUD(e.unitCost || e.cost)}</td>
+              <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">${formatAUD(e.cost)}</td>
+            </tr>
+          `;
+        });
+
+        const element = document.getElementById('pdf-page-element');
+        const wrapper = document.getElementById('pdf-wrapper');
+        wrapper.style.display = 'block';
+
+        const opt = {
+          margin:       10,
+          filename:     `${titleText.replace(/[^a-zA-Z0-9]/g, '_')}_Report.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2 },
+          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+          wrapper.style.display = 'none';
+        });
+      }
+    }
+
+    function exportData() {
+      triggerHaptic('light');
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `MyBuildTrack_Backup_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.projects && imported.expenses) {
+            data = imported;
+            autoSave();
+            alert('Backup successfully imported!');
+          } else {
+            alert('Invalid backup file format.');
+          }
+        } catch(err) {
+          alert('Error parsing JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Initialize App
+    initStorage();
   </script>
 </body>
 </html>
