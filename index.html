@@ -42,7 +42,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* Custom animations and hide scrollbars for clean mobile tabs */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -54,11 +53,27 @@
 </head>
 <body class="h-full bg-slate-50 text-slate-900 flex flex-col overflow-hidden select-none">
 
-    <!-- Launch / Splash Screen (Enlarged Logo in Center) -->
+    <!-- Launch / Splash Screen (Enlarged Custom Tradie Logo Centered) -->
     <div id="splash-screen" class="fixed inset-0 z-50 bg-brand-600 flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <div class="flex flex-col items-center animate-pulse">
-            <div class="w-28 h-28 bg-white text-brand-600 rounded-3xl flex items-center justify-center shadow-2xl mb-4 transform scale-110">
-                <i data-lucide="hard-hat" class="w-16 h-16"></i>
+            <div class="w-36 h-36 bg-white text-brand-600 rounded-3xl flex items-center justify-center shadow-2xl mb-4 transform scale-110 p-3">
+                <!-- Tradie Character Logo SVG -->
+                <svg viewBox="0 0 100 100" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="#eff6ff"/>
+                    <!-- Hard Hat -->
+                    <path d="M25 45C25 35 35 28 50 28C65 28 75 35 75 45H25Z" fill="#f59e0b"/>
+                    <path d="M20 45H80V49H20V45Z" fill="#d97706"/>
+                    <!-- Face / Head -->
+                    <circle cx="50" cy="55" r="12" fill="#fed7aa"/>
+                    <!-- Eyes & Smile -->
+                    <circle cx="46" cy="54" r="1.5" fill="#1e293b"/>
+                    <circle cx="54" cy="54" r="1.5" fill="#1e293b"/>
+                    <path d="M48 60C49 61 51 61 52 60" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round"/>
+                    <!-- Toolbox / Sheet Base -->
+                    <rect x="30" y="70" width="40" height="18" rx="3" fill="#2563eb"/>
+                    <path d="M42 70V67H58V70" stroke="#1e293b" stroke-width="2"/>
+                    <rect x="45" y="75" width="10" height="6" rx="1" fill="white"/>
+                </svg>
             </div>
             <h1 class="text-3xl font-bold tracking-tight">My BuildTrack</h1>
             <p class="text-brand-100 text-sm mt-1">DIY Construction & Expense Manager</p>
@@ -82,11 +97,17 @@
         </button>
     </div>
 
-    <!-- Top Banner -->
+    <!-- Top Banner with Logo Navigation -->
     <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-10">
-        <div onclick="switchTab('home')" class="flex items-center space-x-2 cursor-pointer">
-            <div class="w-9 h-9 bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-md">
-                <i data-lucide="hard-hat" class="w-5 h-5"></i>
+        <div onclick="switchTab('home')" class="flex items-center space-x-2.5 cursor-pointer">
+            <div class="w-9 h-9 bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-md p-1">
+                <!-- Tradie Character Logo SVG (Mini Header) -->
+                <svg viewBox="0 0 100 100" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 45C25 35 35 28 50 28C65 28 75 35 75 45H25Z" fill="#f59e0b"/>
+                    <path d="M20 45H80V49H20V45Z" fill="#d97706"/>
+                    <circle cx="50" cy="55" r="12" fill="#fed7aa"/>
+                    <rect x="30" y="70" width="40" height="18" rx="3" fill="white"/>
+                </svg>
             </div>
             <span class="font-bold text-lg text-slate-800 tracking-tight">My BuildTrack</span>
         </div>
@@ -103,7 +124,7 @@
     <!-- Main Content Area -->
     <main class="flex-1 overflow-y-auto relative pb-20">
         
-        <!-- Home / Dashboard Tab -->
+        <!-- Home / Dashboard Tab (Default landing after load) -->
         <section id="tab-home" class="p-4 space-y-4 max-w-lg mx-auto">
             <div class="bg-gradient-to-r from-brand-600 to-blue-700 text-white p-5 rounded-2xl shadow-lg">
                 <h2 class="text-xl font-bold">Welcome Back!</h2>
@@ -168,7 +189,6 @@
                 <button class="bg-brand-600 text-white text-xs px-3 py-2 rounded-lg font-medium shadow">+ New Project</button>
             </div>
             <div id="projects-list" class="space-y-3">
-                <!-- Dynamically populated or static cards -->
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
                     <div class="flex justify-between items-start">
                         <div>
@@ -178,7 +198,7 @@
                         <span class="bg-emerald-100 text-emerald-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">Active</span>
                     </div>
                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div class="bg-brand-600 h-full w-[28%]" style="width: 28%;"></div>
+                        <div class="bg-brand-600 h-full" style="width: 28%;"></div>
                     </div>
                     <div class="flex justify-between text-xs text-slate-600">
                         <span>Spent: $12,450</span>
@@ -188,7 +208,7 @@
             </div>
         </section>
 
-        <!-- Receipts & OCR Tab -->
+        <!-- Receipts & OCR Tab (Restored) -->
         <section id="tab-receipts" class="p-4 space-y-4 max-w-lg mx-auto hidden">
             <h2 class="text-lg font-bold text-slate-800">Receipt Scanner (OCR)</h2>
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
@@ -234,17 +254,11 @@
                 <div class="p-4 flex items-center justify-between">
                     <div>
                         <h4 class="font-medium text-sm text-slate-800">App Version</h4>
-                        <p class="text-xs text-slate-500">My BuildTrack v1.2.0</p>
+                        <p class="text-xs text-slate-500">My BuildTrack v1.2.1</p>
                     </div>
                     <button onclick="manualCheckForUpdates()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition">
                         Check Updates
                     </button>
-                </div>
-                <div class="p-4 flex items-center justify-between">
-                    <div>
-                        <h4 class="font-medium text-sm text-slate-800">Storage Mode</h4>
-                        <p class="text-xs text-slate-500">IndexedDB Active</p>
-                    </div>
                 </div>
             </div>
         </section>
@@ -277,7 +291,6 @@
 
     <!-- Application Script Logic -->
     <script>
-        // Initialize Icons
         lucide.createIcons();
 
         // Splash screen dismissal after load
@@ -286,9 +299,8 @@
                 const splash = document.getElementById('splash-screen');
                 splash.style.opacity = '0';
                 setTimeout(() => splash.remove(), 500);
-            }, 800);
+            }, 900);
             
-            // Register Service Worker & Setup Update Checks
             initServiceWorker();
             initChart();
         });
@@ -307,11 +319,10 @@
                     btn.classList.add('text-slate-400');
                 }
             });
-            // Re-trigger icon rendering if needed
             lucide.createIcons();
         }
 
-        // Tesseract OCR Receipt Processing
+        // Tesseract OCR Receipt Processing Restored
         async function processReceiptImage(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -364,12 +375,15 @@
             });
         }
 
-        // Robust Service Worker Update Mechanism
+        // Robust Service Worker Update Mechanism & Check For Updates Fix
         let deferredWorker = null;
 
         function initServiceWorker() {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js').then(reg => {
+                    // Check for updates on load/re-registration
+                    reg.update();
+
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
                         newWorker.addEventListener('statechange', () => {
@@ -401,15 +415,24 @@
                         reg.update().then(() => {
                             setTimeout(() => {
                                 icon.classList.remove('animate-spin');
-                                alert('App is up to date!');
+                                if (reg.waiting) {
+                                    document.getElementById('update-banner').classList.remove('hidden');
+                                } else {
+                                    alert('App is fully up to date!');
+                                }
                             }, 1000);
+                        }).catch(() => {
+                            icon.classList.remove('animate-spin');
+                            alert('Could not check for updates right now.');
                         });
                     } else {
-                        setTimeout(() => icon.classList.remove('animate-spin'), 1000);
+                        icon.classList.remove('animate-spin');
+                        alert('No service worker registration found.');
                     }
                 });
             } else {
-                setTimeout(() => icon.classList.remove('animate-spin'), 1000);
+                icon.classList.remove('animate-spin');
+                alert('Service workers are not supported in this browser.');
             }
         }
 
