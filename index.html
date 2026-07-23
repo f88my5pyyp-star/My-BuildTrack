@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>My BuildTrack - Construction & Expense Management PWA</title>
+  <meta name="description" content="My BuildTrack - Progressive Web App for construction project and expense management." />
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Export Libraries (PDF & Excel) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <!-- OCR Library -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.3/dist/tesseract.min.js"></script>
+
+  <!-- PWA Metadata & Favicons -->
+  <link rel="manifest" href="site.webmanifest" />
+  <meta name="theme-color" content="#0F172A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="My BuildTrack" />
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png" />
+
+  <style>
+    body {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      background-color: #F8FAFC;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .nav-btn.active {
+      color: #EAB308;
+      border-bottom: 2px solid #EAB308;
+    }
+  </style>
+</head>
+
+<body class="font-sans antialiased text-slate-900 pb-20 md:pb-0">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-slate-950 text-white shadow-xl border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <img src="logo.svg" alt="My BuildTrack Logo" class="h-10 w-10 object-contain rounded-full bg-white p-0.5 border border-slate-700" />
+      <h1 class="text-xl font-black tracking-tight text-white">
+        My Build<span class="text-yellow-400">Track</span>
+      </h1>
+    </div>
+    <button onclick="switchTab('projects')" class="bg-yellow-400 text-slate-950 font-bold px-4 py-1.5 rounded-full text-sm hover:bg-yellow-300 transition shadow-sm">
+      + New Project
+    </button>
+  </header>
+
+  <!-- NAVIGATION TABS BAR (Desktop Header / Mobile Bottom Sticky Bar) -->
+  <nav class="bg-slate-900 text-slate-400 border-b border-slate-800 sticky top-[61px] z-40 hidden md:block">
+    <div class="max-w-7xl mx-auto flex gap-8 px-6">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active py-3 font-semibold text-sm transition">Dashboard</button>
+      <button onclick="switchTab('projects')" id="nav-projects" class="nav-btn py-3 font-semibold text-sm transition">Projects</button>
+      <button onclick="switchTab('receipts')" id="nav-receipts" class="nav-btn py-3 font-semibold text-sm transition">Receipts & OCR</button>
+      <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-btn py-3 font-semibold text-sm transition">Analytics</button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn py-3 font-semibold text-sm transition">Settings</button>
+    </div>
+  </nav>
+
+  <!-- MAIN MULTI-PAGE CONTAINER -->
+  <main class="max-w-7xl mx-auto p-4 md:p-8">
+
+    <!-- TAB 1: DASHBOARD / HOME -->
+    <section id="tab-dashboard" class="tab-content active space-y-6">
+      <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-md border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-bold">Welcome back to My BuildTrack</h2>
+          <p class="text-slate-400 text-sm mt-1">Track job site costs, scan receipts, and manage project progress offline.</p>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="switchTab('receipts')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition">Scan Receipt</button>
+          <button onclick="switchTab('projects')" class="bg-yellow-400 hover:bg-yellow-300 text-slate-950 px-4 py-2 rounded-xl text-sm font-bold transition">View Projects</button>
+        </div>
+      </div>
+
+      <!-- Quick Stats Overview Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-500 uppercase">Active Projects</p>
+          <p id="dash-active-count" class="text-3xl font-extrabold text-slate-900 mt-1">0</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-500 uppercase">Total Expenses</p>
+          <p id="dash-total-expenses" class="text-3xl font-extrabold text-slate-900 mt-1">$0.00</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-500 uppercase">Receipts Scanned</p>
+          <p id="dash-receipt-count" class="text-3xl font-extrabold text-slate-900 mt-1">0</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-500 uppercase">PWA Storage Mode</p>
+          <p class="text-3xl font-extrabold text-emerald-600 mt-1">IndexedDB</p>
+        </div>
+      </div>
+
+      <!-- Quick Recent Activity Section -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-900 mb-4">Recent Project Activity</h3>
+        <div id="recent-activity-list" class="space-y-3 text-sm text-slate-600">
+          <p class="italic text-slate-400">No recent project activity logged yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: PROJECTS MANAGEMENT -->
+    <section id="tab-projects" class="tab-content space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900">Projects Directory</h2>
+          <p class="text-slate-500 text-sm">Manage construction jobs, materials, and hardware tracking.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">Export Excel</button>
+          <button onclick="exportToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">Export PDF</button>
+        </div>
+      </div>
+
+      <!-- Add New Project Form -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <h3 class="text-md font-bold text-slate-800">Add New Project</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <input type="text" id="proj-name-input" placeholder="Project Title (e.g. Site #42 Build)" class="p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-yellow-400 outline-none">
+          <input type="number" id="proj-budget-input" placeholder="Budget ($)" class="p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-yellow-400 outline-none">
+          <button onclick="addNewProject()" class="bg-slate-950 text-white font-bold px-4 py-2.5 rounded-xl text-sm hover:bg-slate-800 transition">Create Job Entry</button>
+        </div>
+      </div>
+
+      <!-- Project List Container -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="pdf-export-area">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-sm text-slate-700 flex justify-between">
+          <span>Active Construction Jobs</span>
+          <span>IndexedDB Persistence</span>
+        </div>
+        <div id="projects-container" class="divide-y divide-slate-100 p-4">
+          <p class="text-slate-400 text-center py-8 text-sm">No active projects found. Add one above to get started.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: RECEIPTS & OCR SCANNER -->
+    <section id="tab-receipts" class="tab-content space-y-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900">Receipt Scanner & Expense Logging</h2>
+        <p class="text-slate-500 text-sm">Scan physical hardware receipts with Tesseract.js OCR to log costs automatically.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- OCR Upload Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-md font-bold text-slate-800">Scan Hardware / Material Receipt</h3>
+          <div class="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center space-y-3">
+            <input type="file" id="ocr-file-input" accept="image/*" class="text-xs text-slate-500 block w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-yellow-100 file:text-yellow-700 hover:file:bg-yellow-200">
+            <button onclick="processReceiptOCR()" id="ocr-btn" class="bg-slate-950 text-white font-bold w-full py-2.5 rounded-xl text-sm hover:bg-slate-800 transition disabled:opacity-50" disabled>
+              Extract Receipt Data
+            </button>
+            <p id="ocr-status" class="text-xs font-semibold text-slate-600 mt-2"></p>
+          </div>
+        </div>
+
+        <!-- Manual Expense Logging Form -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <h3 class="text-md font-bold text-slate-800">Manual Expense Log</h3>
+          <select id="exp-project-select" class="w-full p-2.5 border rounded-xl text-sm outline-none">
+            <option value="">Select Target Project</option>
+          </select>
+          <input type="text" id="exp-desc-input" placeholder="Expense Item (e.g., Timber, Nails)" class="w-full p-2.5 border rounded-xl text-sm outline-none">
+          <input type="number" id="exp-amount-input" placeholder="Amount ($)" class="w-full p-2.5 border rounded-xl text-sm outline-none">
+          <button onclick="logManualExpense()" class="bg-yellow-400 text-slate-950 font-bold w-full py-2.5 rounded-xl text-sm hover:bg-yellow-300 transition">Save Expense Log</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: ANALYTICS & CHARTS -->
+    <section id="tab-analytics" class="tab-content space-y-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900">Analytics & Budget Reporting</h2>
+        <p class="text-slate-500 text-sm">Visual break-down of material costs and project expenditure.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="text-md font-bold text-slate-800 mb-4">Expenses Category Distribution</h3>
+          <div class="h-64 relative">
+            <canvas id="analyticsDoughnutChart"></canvas>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="text-md font-bold text-slate-800 mb-4">Project Cost vs Budget</h3>
+          <div class="h-64 relative">
+            <canvas id="analyticsBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SETTINGS -->
+    <section id="tab-settings" class="tab-content space-y-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900">App Settings & Info</h2>
+        <p class="text-slate-500 text-sm">Manage local database storage, offline cache, and application preferences.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 max-w-xl">
+        <div class="flex items-center justify-between border-b pb-3">
+          <div>
+            <p class="font-bold text-sm text-slate-800">App Name</p>
+            <p class="text-xs text-slate-500">Registered PWA Title</p>
+          </div>
+          <span class="text-sm font-bold text-slate-900">My BuildTrack</span>
+        </div>
+        <div class="flex items-center justify-between border-b pb-3">
+          <div>
+            <p class="font-bold text-sm text-slate-800">Storage Engine</p>
+            <p class="text-xs text-slate-500">Browser persistent storage</p>
+          </div>
+          <span class="text-sm font-bold text-emerald-600">IndexedDB Active</span>
+        </div>
+        <div class="flex items-center justify-between border-b pb-3">
+          <div>
+            <p class="font-bold text-sm text-slate-800">Clear Storage Cache</p>
+            <p class="text-xs text-slate-500">Reset local IndexedDB data</p>
+          </div>
+          <button onclick="clearAppData()" class="bg-rose-100 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-rose-200 transition">Reset Database</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MOBILE BOTTOM FIXED NAVIGATION BAR -->
+  <div class="fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 flex justify-around py-2.5 px-2 md:hidden z-50 text-xs text-slate-400">
+    <button onclick="switchTab('dashboard')" class="flex flex-col items-center gap-1 active:text-yellow-400">
+      <span>Dashboard</span>
+    </button>
+    <button onclick="switchTab('projects')" class="flex flex-col items-center gap-1 active:text-yellow-400">
+      <span>Projects</span>
+    </button>
+    <button onclick="switchTab('receipts')" class="flex flex-col items-center gap-1 active:text-yellow-400">
+      <span>Receipts</span>
+    </button>
+    <button onclick="switchTab('analytics')" class="flex flex-col items-center gap-1 active:text-yellow-400">
+      <span>Analytics</span>
+    </button>
+    <button onclick="switchTab('settings')" class="flex flex-col items-center gap-1 active:text-yellow-400">
+      <span>Settings</span>
+    </button>
+  </div>
+
+  <!-- JAVASCRIPT: APPLICATION LOGIC -->
+  <script>
+    let db;
+    let chartInstanceDoughnut;
+    let chartInstanceBar;
+
+    // INITIALIZATION
+    document.addEventListener('DOMContentLoaded', () => {
+      initIndexedDB();
+      initCharts();
+      
+      document.getElementById('ocr-file-input').addEventListener('change', (e) => {
+        document.getElementById('ocr-btn').disabled = !e.target.files.length;
+      });
+    });
+
+    // 1. TAB SWITCHING LOGIC
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+      const targetTab = document.getElementById(`tab-${tabId}`);
+      if (targetTab) targetTab.classList.add('active');
+
+      const targetNav = document.getElementById(`nav-${tabId}`);
+      if (targetNav) targetNav.classList.add('active');
+    }
+
+    // 2. INDEXEDDB SETUP
+    function initIndexedDB() {
+      const request = indexedDB.open('MyBuildTrackDB', 1);
+
+      request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains('projects')) {
+          db.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('expenses')) {
+          db.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true });
+        }
+      };
+
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        refreshUI();
+      };
+
+      request.onerror = (e) => {
+        console.error("IndexedDB initialization error:", e.target.error);
+      };
+    }
+
+    // 3. UI REFRESH
+    function refreshUI() {
+      if (!db) return;
+      const tx = db.transaction(['projects', 'expenses'], 'readonly');
+      const projStore = tx.objectStore('projects');
+      const expStore = tx.objectStore('expenses');
+
+      projStore.getAll().onsuccess = (e) => {
+        const projects = e.target.result || [];
+        renderProjects(projects);
+        updateProjectSelect(projects);
+        document.getElementById('dash-active-count').innerText = projects.length;
+      };
+
+      expStore.getAll().onsuccess = (e) => {
+        const expenses = e.target.result || [];
+        const total = expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+        document.getElementById('dash-total-expenses').innerText = `$${total.toFixed(2)}`;
+        document.getElementById('dash-receipt-count').innerText = expenses.length;
+      };
+    }
+
+    function renderProjects(projects) {
+      const container = document.getElementById('projects-container');
+      if (!projects.length) {
+        container.innerHTML = `<p class="text-slate-400 text-center py-8 text-sm">No active projects found. Add one above to get started.</p>`;
+        return;
+      }
+
+      container.innerHTML = projects.map(p => `
+        <div class="py-3 flex justify-between items-center text-sm">
+          <div>
+            <p class="font-bold text-slate-900">${p.name}</p>
+            <p class="text-xs text-slate-500">Budget: $${parseFloat(p.budget).toFixed(2)}</p>
+          </div>
+          <span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold">Active</span>
+        </div>
+      `).join('');
+    }
+
+    function updateProjectSelect(projects) {
+      const select = document.getElementById('exp-project-select');
+      select.innerHTML = `<option value="">Select Target Project</option>` + 
+        projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+
+    // 4. ADD PROJECT
+    function addNewProject() {
+      const name = document.getElementById('proj-name-input').value.trim();
+      const budget = document.getElementById('proj-budget-input').value;
+
+      if (!name || !budget) {
+        alert("Please specify project name and budget.");
+        return;
+      }
+
+      const tx = db.transaction('projects', 'readwrite');
+      tx.objectStore('projects').add({ name, budget: parseFloat(budget), date: new Date().toISOString() });
+      tx.oncomplete = () => {
+        document.getElementById('proj-name-input').value = '';
+        document.getElementById('proj-budget-input').value = '';
+        refreshUI();
+      };
+    }
+
+    // 5. MANUAL EXPENSE LOG
+    function logManualExpense() {
+      const projectId = document.getElementById('exp-project-select').value;
+      const desc = document.getElementById('exp-desc-input').value.trim();
+      const amount = document.getElementById('exp-amount-input').value;
+
+      if (!projectId || !desc || !amount) {
+        alert("Please fill in project, description, and expense amount.");
+        return;
+      }
+
+      const tx = db.transaction('expenses', 'readwrite');
+      tx.objectStore('expenses').add({ projectId, desc, amount: parseFloat(amount), date: new Date().toISOString() });
+      tx.oncomplete = () => {
+        document.getElementById('exp-desc-input').value = '';
+        document.getElementById('exp-amount-input').value = '';
+        refreshUI();
+        alert("Expense recorded successfully!");
+      };
+    }
+
+    // 6. OCR SCANNER INTEGRATION
+    function processReceiptOCR() {
+      const fileInput = document.getElementById('ocr-file-input');
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const status = document.getElementById('ocr-status');
+      status.innerText = "Processing image with Tesseract OCR...";
+
+      Tesseract.recognize(file, 'eng', { logger: m => status.innerText = `Reading text: ${Math.round(m.progress * 100)}%` })
+        .then(({ data: { text } }) => {
+          status.innerText = "Scan complete!";
+          alert("OCR Extract Complete. Check console for text parsing.");
+          console.log("OCR Result Text:", text);
+        })
+        .catch(err => {
+          console.error(err);
+          status.innerText = "Failed to scan receipt image.";
+        });
+    }
+
+    // 7. CHARTS INITIALIZATION
+    function initCharts() {
+      const ctxDoughnut = document.getElementById('analyticsDoughnutChart').getContext('2d');
+      chartInstanceDoughnut = new Chart(ctxDoughnut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Materials', 'Hardware', 'Tools', 'Subcontractors'],
+          datasets: [{ data: [40, 25, 20, 15], backgroundColor: ['#EAB308', '#3B82F6', '#EF4444', '#10B981'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      const ctxBar = document.getElementById('analyticsBarChart').getContext('2d');
+      chartInstanceBar = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: ['Site #1', 'Site #2', 'Site #3'],
+          datasets: [
+            { label: 'Budget', data: [12000, 15000, 8000], backgroundColor: '#CBD5E1' },
+            { label: 'Spent', data: [9400, 11200, 7800], backgroundColor: '#EAB308' }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // 8. EXPORTS
+    function exportToPDF() {
+      const element = document.getElementById('pdf-export-area');
+      html2pdf().from(element).save('MyBuildTrack_Projects.pdf');
+    }
+
+    function exportToExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet([{ App: 'My BuildTrack', Status: 'Active' }]);
+      XLSX.utils.book_append_sheet(wb, ws, "Projects");
+      XLSX.writeFile(wb, 'MyBuildTrack_Export.xlsx');
+    }
+
+    function clearAppData() {
+      if (confirm("Reset local IndexedDB storage?")) {
+        indexedDB.deleteDatabase('MyBuildTrackDB');
+        location.reload();
+      }
+    }
+
+    // SERVICE WORKER REGISTRATION
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('My BuildTrack SW active scope:', reg.scope))
+          .catch(err => console.error('SW failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
